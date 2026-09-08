@@ -26,6 +26,12 @@ Ferry is deliberately small in scope. It does not try to become an all-in-one du
 - **ZIP workflow** — Compress / Extract commands delegated to Windows 11
 - **Portable settings** — small human-readable JSON, no private database, no telemetry
 
+### A small convenience that matters: `F12`
+
+When a folder contains enough items to fill the entire view, there may be almost no empty background left to right-click for **Open Terminal Here**. Ferry removes that little bit of friction: press **`F12`** at any time to open a terminal in the folder you are currently viewing, regardless of which item is selected or where the keyboard focus is.
+
+It is a small feature, but it reflects Ferry's goal: make everyday file operations feel direct and predictable without adding unnecessary UI.
+
 ## A Windows app, inspired by Nautilus
 
 Ferry is an independent Windows implementation. It is **not** a port, fork, or modified build of GNOME Files/Nautilus, and it contains no Nautilus source code or GNOME artwork.
