@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an improvement that fits Ferry's focused scope
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / workflow
+      description: What file-management problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: windows
+    attributes:
+      label: Can existing Windows functionality be reused?
+      description: Ferry prefers delegation over building large private subsystems.

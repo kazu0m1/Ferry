@@ -1,0 +1,13 @@
+# Ferry local build/runtime output
+Portable/Ferry.exe
+Portable/config/
+dist/
+*.pdb
+*.user
+*.suo
+.vs/
+bin/
+obj/
+
+# Debug/log output
+*.log
