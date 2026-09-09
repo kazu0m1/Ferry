@@ -21,6 +21,10 @@ No installer is required. Extract the ZIP and run `Ferry.exe`.
 
 > **Windows SmartScreen:** Ferry is currently unsigned, so Windows may show a warning the first time you run it. Choose **More info** and then **Run anyway** if you downloaded Ferry from this official repository.
 
+## Screenshot
+
+![Ferry main window](docs/screenshot-main.png)
+
 ## Why Ferry?
 
 Ferry is deliberately small in scope. It does not try to become an all-in-one dual-pane power tool or replace `explorer.exe`. Instead, it focuses on everyday browsing and a few high-value workflows:
