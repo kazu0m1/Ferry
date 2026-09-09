@@ -13,6 +13,14 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 [English README](README.md)
 
+## ダウンロード
+
+**[Ferry v1.0.0 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.0-win-portable.zip)**
+
+インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
+
+> **Windows SmartScreenについて:** Ferryは現在コード署名されていないため、初回起動時にWindowsの警告が表示されることがあります。この公式リポジトリからダウンロードしたFerryであれば、**詳細情報** → **実行** から起動できます。
+
 ## Ferryが大切にしていること
 
 FerryはExplorerを丸ごと置き換える巨大なファイルマネージャーを目指していません。日常のファイル操作で価値の高い部分に絞っています。
@@ -36,7 +44,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. `Ferry-v1.0.0-win-portable.zip`をダウンロードします。
+1. 上の**ダウンロード**リンクから`Ferry-v1.0.0-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 

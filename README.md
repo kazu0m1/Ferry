@@ -13,6 +13,14 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 [日本語 README](README.ja.md)
 
+## Download
+
+**[Download Ferry v1.0.0 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.0-win-portable.zip)**
+
+No installer is required. Extract the ZIP and run `Ferry.exe`.
+
+> **Windows SmartScreen:** Ferry is currently unsigned, so Windows may show a warning the first time you run it. Choose **More info** and then **Run anyway** if you downloaded Ferry from this official repository.
+
 ## Why Ferry?
 
 Ferry is deliberately small in scope. It does not try to become an all-in-one dual-pane power tool or replace `explorer.exe`. Instead, it focuses on everyday browsing and a few high-value workflows:
@@ -42,7 +50,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.0.0-win-portable.zip` from GitHub Releases.
+1. Download `Ferry-v1.0.0-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
