@@ -1,6 +1,6 @@
-﻿# Ferry v1.0.0 Regression Checklist
+﻿# Ferry v1.0 Regression Checklist
 
-Use this checklist for future changes after v1.0.0. The v1.0.0 final candidate itself passed the separate 19-item Windows smoke test recorded in `docs/FINAL_SMOKE_TEST_RESULT_JA.md`.
+Use this checklist for future changes on the Ferry v1.x line. v1.0.0 passed the separate 19-item Windows smoke test recorded in `docs/FINAL_SMOKE_TEST_RESULT_JA.md`; v1.0.1 adds the targeted checks below.
 
 ## Startup / navigation
 
@@ -18,6 +18,9 @@ Use this checklist for future changes after v1.0.0. The v1.0.0 final candidate i
 ## Views / selection / sort
 
 - [ ] List and Grid views work.
+- [ ] List uses lightweight Shell type icons; Grid loads content thumbnails.
+- [ ] Sidebar width accepts values down to 50 and persists.
+- [ ] Pinned folders can be reordered by D&D and retain their order after restart.
 - [ ] Folder Items count appears asynchronously.
 - [ ] Hidden toggle changes visibility and counts consistently.
 - [ ] Single click selects one item.
@@ -34,12 +37,14 @@ Use this checklist for future changes after v1.0.0. The v1.0.0 final candidate i
 - [ ] Typing in file view starts search.
 - [ ] `Ctrl+F` focuses search.
 - [ ] Contains / StartsWith / wildcard search work.
+- [ ] Full-width / half-width equivalents match (`カタカナ` ↔ `ｶﾀｶﾅ`, `ABC` ↔ `ＡＢＣ`) while kana type remains distinct.
 - [ ] Results appear progressively and include Location.
 - [ ] Backspace from an empty query, `Esc`, and `×` return promptly to the normal folder view.
 
 ## Rename
 
-- [ ] Single `F2` shows the complete filename and initially selects the stem.
+- [ ] Single `F2` performs inline rename, shows the complete filename, and initially selects the stem.
+- [ ] New Folder appears in the stable tail, scrolls into view, and immediately enters inline rename.
 - [ ] Multi-selection `F2` opens bulk rename.
 - [ ] Find/Replace and numbering templates work.
 - [ ] Duplicate/invalid targets are blocked.
@@ -75,6 +80,8 @@ Use this checklist for future changes after v1.0.0. The v1.0.0 final candidate i
 - [ ] Extract Here works.
 - [ ] Extract to `<name>\` works.
 - [ ] Archive work does not freeze Ferry.
+- [ ] Compression/extraction shows a neutral-gray indeterminate progress indicator that persists across navigation.
+- [ ] Successful archive completion displays the corresponding completion status for about 3 seconds.
 
 ## External updates
 
@@ -90,6 +97,7 @@ Use this checklist for future changes after v1.0.0. The v1.0.0 final candidate i
 - [ ] Missing `settings.json` falls back safely.
 - [ ] Invalid `settings.json` falls back safely and can be regenerated.
 - [ ] Settings Export / Import works.
+- [ ] About Ferry shows the assembly-derived running version, `Created by kazu0m1`, GitHub, and MIT license notice.
 
 ## Shell integration
 

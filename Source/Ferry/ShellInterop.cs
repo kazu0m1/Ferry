@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -114,22 +114,54 @@ namespace Ferry
             return isDirectory ? "File folder" : "File";
         }
 
-        public static ImageSource GetSmallIcon(string path, bool isDirectory)
+        public static string GetTypeNameFast(string path, bool isDirectory)
         {
             try
             {
                 SHFILEINFO info = new SHFILEINFO();
                 uint attr = isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
-                IntPtr result = SHGetFileInfo(path, attr, ref info, (uint)Marshal.SizeOf(typeof(SHFILEINFO)), SHGFI_ICON | SHGFI_SMALLICON);
-                if (result != IntPtr.Zero && info.hIcon != IntPtr.Zero)
+                SHGetFileInfo(path, attr, ref info, (uint)Marshal.SizeOf(typeof(SHFILEINFO)), SHGFI_TYPENAME | SHGFI_USEFILEATTRIBUTES);
+                if (!string.IsNullOrEmpty(info.szTypeName)) return info.szTypeName;
+            }
+            catch { }
+            return isDirectory ? "File folder" : "File";
+        }
+
+        public static ImageSource GetSmallTypeIcon(string path, bool isDirectory)
+        {
+            // List view intentionally asks Shell for the registered type icon only.
+            // SHGFI_USEFILEATTRIBUTES avoids touching the actual file or invoking thumbnail
+            // providers, so a folder full of PDFs cannot contend with Open/Enter operations.
+            return TryGetSmallIcon(path, isDirectory, true);
+        }
+
+        public static ImageSource GetSmallIcon(string path, bool isDirectory)
+        {
+            ImageSource icon = TryGetSmallIcon(path, isDirectory, false);
+            if (icon != null) return icon;
+            return GetSmallTypeIcon(path, isDirectory);
+        }
+
+        private static ImageSource TryGetSmallIcon(string path, bool isDirectory, bool useFileAttributes)
+        {
+            IntPtr hIcon = IntPtr.Zero;
+            try
+            {
+                SHFILEINFO info = new SHFILEINFO();
+                uint attr = isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+                uint flags = SHGFI_ICON | SHGFI_SMALLICON;
+                if (useFileAttributes) flags |= SHGFI_USEFILEATTRIBUTES;
+                IntPtr result = SHGetFileInfo(path, attr, ref info, (uint)Marshal.SizeOf(typeof(SHFILEINFO)), flags);
+                hIcon = info.hIcon;
+                if (result != IntPtr.Zero && hIcon != IntPtr.Zero)
                 {
-                    BitmapSource source = Imaging.CreateBitmapSourceFromHIcon(info.hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                    BitmapSource source = Imaging.CreateBitmapSourceFromHIcon(hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
                     source.Freeze();
-                    DestroyIcon(info.hIcon);
                     return source;
                 }
             }
             catch { }
+            finally { if (hIcon != IntPtr.Zero) DestroyIcon(hIcon); }
             return null;
         }
 

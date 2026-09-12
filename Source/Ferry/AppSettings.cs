@@ -141,7 +141,8 @@ namespace Ferry
             if (s.HiddenColumns == null) s.HiddenColumns = new List<string>(new string[] { "Created" });
             if (s.WindowWidth < 640) s.WindowWidth = 1180;
             if (s.WindowHeight < 480) s.WindowHeight = 760;
-            if (s.SidebarWidth < 120) s.SidebarWidth = 220;
+            if (s.SidebarWidth < 50) s.SidebarWidth = 220;
+            if (s.SidebarWidth > 480) s.SidebarWidth = 480;
             if (s.GridIconSize < 32) s.GridIconSize = 64;
         }
 

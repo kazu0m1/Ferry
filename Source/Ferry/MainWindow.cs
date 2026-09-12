@@ -27,6 +27,7 @@ namespace Ferry
         private TabControl tabs;
         private Grid mainGrid;
         private Border sidebarBorder;
+        private GridSplitter sidebarSplitter;
         private StackPanel sidebarPanel;
         private StackPanel breadcrumbPanel;
         private TextBox locationBox;
@@ -35,6 +36,12 @@ namespace Ferry
         private DispatcherTimer searchDebounceTimer;
         private ComboBox searchModeBox;
         private TextBlock statusText;
+        private ProgressBar statusProgress;
+        private readonly SortedDictionary<int, string> archiveActivities = new SortedDictionary<int, string>();
+        private int nextArchiveActivityId;
+        private DispatcherTimer transientStatusTimer;
+        private string transientStatusMessage;
+        private DateTime transientStatusUntilUtc;
         private Button backButton;
         private Button forwardButton;
         private string currentViewMode;
@@ -43,6 +50,14 @@ namespace Ferry
         private bool suppressSearchTextEvent;
         private readonly NaturalStringComparer natural = new NaturalStringComparer();
         private TabViewContext lastSelectedContext;
+        private readonly ObservableCollection<PinnedSidebarItem> pinnedSidebarItems = new ObservableCollection<PinnedSidebarItem>();
+        private ListBox pinnedListBox;
+        private Point pinnedDragStart;
+        private PinnedSidebarItem pinnedDragSourceItem;
+        private bool pinnedDragStarted;
+        private int pinnedDropSlot = -1;
+        private const string PinnedFolderDragFormat = "Ferry.PinnedFolder";
+        private const string InlineRenameEditorTag = "Ferry.InlineRenameEditor";
 
         public MainWindow(AppSettings appSettings, string initialPath)
         {
@@ -115,15 +130,31 @@ namespace Ferry
             toolbar.Child = top; root.Children.Add(toolbar); Grid.SetRow(toolbar, 0);
 
             mainGrid = new Grid();
-            mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = settings.SidebarVisible ? new GridLength(settings.SidebarWidth) : new GridLength(0) });
+            // Sidebar and file view meet at the same visual boundary.  The resize hit target is
+            // overlaid on the sidebar edge instead of consuming its own layout column, so there is
+            // no empty strip between the sidebar and the TabControl/file-view frame.
+            mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = settings.SidebarVisible ? new GridLength(settings.SidebarWidth) : new GridLength(0), MinWidth = settings.SidebarVisible ? 50 : 0, MaxWidth = settings.SidebarVisible ? 480 : double.PositiveInfinity });
             mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             sidebarPanel = new StackPanel();
-            ScrollViewer sideScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = sidebarPanel };
-            sidebarBorder = new Border { BorderBrush = SystemColors.ControlDarkBrush, BorderThickness = new Thickness(0, 0, 1, 0), Child = sideScroll, Background = SystemColors.ControlLightBrush, AllowDrop = true };
+            ScrollViewer sideScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = sidebarPanel };
+            sidebarBorder = new Border { BorderThickness = new Thickness(0), Child = sideScroll, Background = SystemColors.ControlLightBrush, AllowDrop = true };
             sidebarBorder.DragOver += SidebarDragOver;
             sidebarBorder.Drop += SidebarDrop;
+            sidebarBorder.DragLeave += delegate { ClearPinnedDropIndicator(); };
             mainGrid.Children.Add(sidebarBorder); Grid.SetColumn(sidebarBorder, 0);
-            GridSplitter sidebarSplitter = new GridSplitter { Width = 5, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Stretch, ResizeDirection = GridResizeDirection.Columns, ResizeBehavior = GridResizeBehavior.CurrentAndNext, Background = Brushes.Transparent };
+
+            // The TabControl/file-view frame supplies the visible separator.  Keep only a
+            // transparent 5-DIP splitter hit target overlaid on the sidebar's right edge.
+            sidebarSplitter = new GridSplitter
+            {
+                Width = 5,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                ResizeDirection = GridResizeDirection.Columns,
+                ResizeBehavior = GridResizeBehavior.CurrentAndNext,
+                Background = Brushes.Transparent
+            };
+            Panel.SetZIndex(sidebarSplitter, 20);
             mainGrid.Children.Add(sidebarSplitter); Grid.SetColumn(sidebarSplitter, 0);
             BuildSidebar();
 
@@ -133,7 +164,24 @@ namespace Ferry
             root.Children.Add(mainGrid); Grid.SetRow(mainGrid, 1);
 
             Border status = new Border { BorderBrush = SystemColors.ControlDarkBrush, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(10, 4, 10, 4) };
-            statusText = new TextBlock { Text = "Ready" }; status.Child = statusText; root.Children.Add(status); Grid.SetRow(status, 2);
+            Grid statusGrid = new Grid();
+            statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            statusText = new TextBlock { Text = "Ready", VerticalAlignment = VerticalAlignment.Center };
+            statusProgress = new ProgressBar
+            {
+                Width = 150,
+                Height = 12,
+                Margin = new Thickness(12, 0, 0, 0),
+                IsIndeterminate = true,
+                Visibility = Visibility.Collapsed,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = Brushes.Gray,
+                Background = SystemColors.ControlLightBrush
+            };
+            statusGrid.Children.Add(statusText); Grid.SetColumn(statusText, 0);
+            statusGrid.Children.Add(statusProgress); Grid.SetColumn(statusProgress, 1);
+            status.Child = statusGrid; root.Children.Add(status); Grid.SetRow(status, 2);
             return root;
         }
 
@@ -146,11 +194,13 @@ namespace Ferry
         {
             if (sidebarPanel == null) return;
             sidebarPanel.Children.Clear();
+            pinnedSidebarItems.Clear();
+            pinnedListBox = null;
             AddSidebarHeading("Places");
-            AddSidebarButton("Home", settings.HomePath, false);
+            AddSidebarButton("Home", settings.HomePath);
             AddKnownFolder("Desktop", Environment.SpecialFolder.DesktopDirectory);
             AddKnownFolder("Documents", Environment.SpecialFolder.MyDocuments);
-            string downloads = KnownFolders.Downloads; if (Directory.Exists(downloads)) AddSidebarButton("Downloads", downloads, false);
+            string downloads = KnownFolders.Downloads; if (Directory.Exists(downloads)) AddSidebarButton("Downloads", downloads);
             AddKnownFolder("Pictures", Environment.SpecialFolder.MyPictures);
             AddKnownFolder("Music", Environment.SpecialFolder.MyMusic);
             AddKnownFolder("Videos", Environment.SpecialFolder.MyVideos);
@@ -158,7 +208,7 @@ namespace Ferry
             if (settings.PinnedFolders.Count > 0)
             {
                 AddSidebarHeading("Pinned");
-                for (int i = 0; i < settings.PinnedFolders.Count; i++) if (Directory.Exists(settings.PinnedFolders[i])) AddSidebarButton(Path.GetFileName(settings.PinnedFolders[i].TrimEnd('\\')), settings.PinnedFolders[i], true);
+                BuildPinnedSidebarList();
             }
 
             AddSidebarHeading("Drives");
@@ -169,7 +219,7 @@ namespace Ferry
                 {
                     string label = drives[i].Name;
                     try { if (drives[i].IsReady && !string.IsNullOrEmpty(drives[i].VolumeLabel)) label = drives[i].VolumeLabel + " (" + drives[i].Name.TrimEnd('\\') + ")"; } catch { }
-                    AddSidebarButton(label, drives[i].RootDirectory.FullName, false);
+                    AddSidebarButton(label, drives[i].RootDirectory.FullName);
                 }
             }
             catch { }
@@ -186,7 +236,7 @@ namespace Ferry
 
         private void AddKnownFolder(string name, Environment.SpecialFolder folder)
         {
-            string path = Environment.GetFolderPath(folder); if (Directory.Exists(path)) AddSidebarButton(name, path, false);
+            string path = Environment.GetFolderPath(folder); if (Directory.Exists(path)) AddSidebarButton(name, path);
         }
 
         private void AddSidebarHeading(string text)
@@ -199,14 +249,77 @@ namespace Ferry
             return new Button { Content = text, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 6, 8, 6), Margin = new Thickness(4, 1, 4, 1), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
         }
 
-        private void AddSidebarButton(string text, string path, bool pinned)
+        private void AddSidebarButton(string text, string path)
         {
             Button button = SidebarButton(text); button.Tag = path; button.ToolTip = path; button.Click += delegate { Navigate(path, true); };
-            if (pinned)
-            {
-                ContextMenu menu = new ContextMenu(); MenuItem unpin = new MenuItem { Header = "Unpin" }; unpin.Click += delegate { settings.PinnedFolders.RemoveAll(delegate(string p) { return string.Equals(p, path, StringComparison.OrdinalIgnoreCase); }); try { SettingsStore.Save(settings); } catch { } BuildSidebar(); }; menu.Items.Add(unpin); button.ContextMenu = menu;
-            }
             sidebarPanel.Children.Add(button);
+        }
+
+        private void BuildPinnedSidebarList()
+        {
+            pinnedSidebarItems.Clear();
+            for (int i = 0; i < settings.PinnedFolders.Count; i++)
+            {
+                string path = settings.PinnedFolders[i];
+                if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) continue;
+                string name = Path.GetFileName(path.TrimEnd('\\'));
+                if (string.IsNullOrEmpty(name)) name = path;
+                pinnedSidebarItems.Add(new PinnedSidebarItem(name, path));
+            }
+            if (pinnedSidebarItems.Count == 0) return;
+
+            pinnedListBox = new ListBox
+            {
+                ItemsSource = pinnedSidebarItems,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(0),
+                Margin = new Thickness(0),
+                SelectionMode = SelectionMode.Single,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                AllowDrop = true
+            };
+            ScrollViewer.SetVerticalScrollBarVisibility(pinnedListBox, ScrollBarVisibility.Disabled);
+            ScrollViewer.SetHorizontalScrollBarVisibility(pinnedListBox, ScrollBarVisibility.Disabled);
+
+            DataTemplate template = new DataTemplate(typeof(PinnedSidebarItem));
+            FrameworkElementFactory text = new FrameworkElementFactory(typeof(TextBlock));
+            text.SetBinding(TextBlock.TextProperty, new Binding("Name"));
+            text.SetBinding(FrameworkElement.ToolTipProperty, new Binding("FullPath"));
+            text.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+            template.VisualTree = text;
+            pinnedListBox.ItemTemplate = template;
+
+            Style itemStyle = new Style(typeof(ListBoxItem));
+            itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+            itemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 6, 8, 6)));
+            itemStyle.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(4, 1, 4, 1)));
+            itemStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+            itemStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+            pinnedListBox.ItemContainerStyle = itemStyle;
+
+            ContextMenu menu = new ContextMenu();
+            MenuItem unpin = new MenuItem { Header = "Unpin" };
+            unpin.Click += delegate
+            {
+                PinnedSidebarItem item = pinnedListBox != null ? pinnedListBox.SelectedItem as PinnedSidebarItem : null;
+                if (item == null) return;
+                settings.PinnedFolders.RemoveAll(delegate(string p) { return string.Equals(p, item.FullPath, StringComparison.OrdinalIgnoreCase); });
+                try { SettingsStore.Save(settings); } catch { }
+                BuildSidebar();
+            };
+            menu.Items.Add(unpin);
+            pinnedListBox.ContextMenu = menu;
+
+            pinnedListBox.PreviewMouseLeftButtonDown += PinnedListMouseLeftButtonDown;
+            pinnedListBox.PreviewMouseLeftButtonUp += PinnedListMouseLeftButtonUp;
+            pinnedListBox.PreviewMouseMove += PinnedListMouseMove;
+            pinnedListBox.PreviewMouseRightButtonDown += PinnedListMouseRightButtonDown;
+            pinnedListBox.DragOver += PinnedListDragOver;
+            pinnedListBox.Drop += PinnedListDrop;
+            pinnedListBox.DragLeave += delegate { ClearPinnedDropIndicator(); };
+
+            sidebarPanel.Children.Add(pinnedListBox);
         }
 
         private void OpenNewTab(string path, bool select)
@@ -251,7 +364,12 @@ namespace Ferry
         {
             FrameworkElementFactory panel = new FrameworkElementFactory(typeof(StackPanel)); panel.SetValue(StackPanel.WidthProperty, 150.0); panel.SetValue(StackPanel.MarginProperty, new Thickness(7)); panel.SetValue(StackPanel.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             FrameworkElementFactory image = new FrameworkElementFactory(typeof(Image)); image.SetBinding(Image.SourceProperty, new Binding("Icon")); image.SetValue(Image.WidthProperty, settings.GridIconSize); image.SetValue(Image.HeightProperty, settings.GridIconSize); image.SetValue(Image.StretchProperty, Stretch.Uniform); image.SetValue(Image.HorizontalAlignmentProperty, HorizontalAlignment.Center); panel.AppendChild(image);
-            FrameworkElementFactory name = new FrameworkElementFactory(typeof(TextBlock)); name.SetBinding(TextBlock.TextProperty, new Binding("Name")); name.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center); name.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap); name.SetValue(TextBlock.MaxHeightProperty, 42.0); name.SetValue(TextBlock.MarginProperty, new Thickness(2, 5, 2, 0)); panel.AppendChild(name);
+
+            FrameworkElementFactory nameHost = new FrameworkElementFactory(typeof(Grid)); nameHost.SetValue(Grid.MarginProperty, new Thickness(2, 5, 2, 0));
+            FrameworkElementFactory name = new FrameworkElementFactory(typeof(TextBlock)); name.SetBinding(TextBlock.TextProperty, new Binding("Name")); name.SetBinding(UIElement.VisibilityProperty, new Binding("IsRenaming") { Converter = new InverseBooleanToVisibilityConverter() }); name.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center); name.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap); name.SetValue(TextBlock.MaxHeightProperty, 42.0); nameHost.AppendChild(name);
+            FrameworkElementFactory editor = BuildInlineRenameEditor(true); nameHost.AppendChild(editor);
+            panel.AppendChild(nameHost);
+
             FrameworkElementFactory count = new FrameworkElementFactory(typeof(TextBlock)); count.SetBinding(TextBlock.TextProperty, new Binding("DisplayCount")); count.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center); count.SetValue(TextBlock.ForegroundProperty, SystemColors.GrayTextBrush); panel.AppendChild(count);
             DataTemplate template = new DataTemplate(typeof(FileItem)); template.VisualTree = panel; return template;
         }
@@ -259,9 +377,27 @@ namespace Ferry
         private DataTemplate BuildNameTemplate()
         {
             FrameworkElementFactory panel = new FrameworkElementFactory(typeof(StackPanel)); panel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
-            FrameworkElementFactory image = new FrameworkElementFactory(typeof(Image)); image.SetBinding(Image.SourceProperty, new Binding("Icon")); image.SetValue(Image.WidthProperty, 18.0); image.SetValue(Image.HeightProperty, 18.0); image.SetValue(Image.MarginProperty, new Thickness(0, 0, 7, 0)); panel.AppendChild(image);
-            FrameworkElementFactory text = new FrameworkElementFactory(typeof(TextBlock)); text.SetBinding(TextBlock.TextProperty, new Binding("Name")); text.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center); panel.AppendChild(text);
+            FrameworkElementFactory image = new FrameworkElementFactory(typeof(Image)); image.SetBinding(Image.SourceProperty, new Binding("ListIcon")); image.SetValue(Image.WidthProperty, 18.0); image.SetValue(Image.HeightProperty, 18.0); image.SetValue(Image.MarginProperty, new Thickness(0, 0, 7, 0)); panel.AppendChild(image);
+
+            FrameworkElementFactory nameHost = new FrameworkElementFactory(typeof(Grid));
+            FrameworkElementFactory text = new FrameworkElementFactory(typeof(TextBlock)); text.SetBinding(TextBlock.TextProperty, new Binding("Name")); text.SetBinding(UIElement.VisibilityProperty, new Binding("IsRenaming") { Converter = new InverseBooleanToVisibilityConverter() }); text.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center); nameHost.AppendChild(text);
+            FrameworkElementFactory editor = BuildInlineRenameEditor(false); nameHost.AppendChild(editor);
+            panel.AppendChild(nameHost);
             DataTemplate t = new DataTemplate(); t.VisualTree = panel; return t;
+        }
+
+        private FrameworkElementFactory BuildInlineRenameEditor(bool centered)
+        {
+            FrameworkElementFactory editor = new FrameworkElementFactory(typeof(TextBox));
+            Binding textBinding = new Binding("RenameText") { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged };
+            editor.SetBinding(TextBox.TextProperty, textBinding);
+            editor.SetBinding(UIElement.VisibilityProperty, new Binding("IsRenaming") { Converter = new BooleanToVisibilityConverter() });
+            editor.SetValue(FrameworkElement.TagProperty, InlineRenameEditorTag);
+            editor.SetValue(Control.PaddingProperty, new Thickness(2, 0, 2, 0));
+            editor.SetValue(FrameworkElement.MinWidthProperty, centered ? 120.0 : 90.0);
+            if (centered) editor.SetValue(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center);
+            editor.AddHandler(Keyboard.LostKeyboardFocusEvent, new KeyboardFocusChangedEventHandler(InlineRenameEditorLostKeyboardFocus));
+            return editor;
         }
 
         private void BuildListColumns(TabViewContext ctx, bool searchResults)
@@ -355,7 +491,7 @@ namespace Ferry
         {
             UIElement element = (UIElement)view;
             ((FrameworkElement)view).ContextMenu = new ContextMenu();
-            view.MouseDoubleClick += delegate(object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) OpenSelected(state); };
+            view.MouseDoubleClick += delegate(object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left && !IsInlineRenameEditorSource(e.OriginalSource as DependencyObject)) OpenSelected(state); };
             element.PreviewMouseRightButtonDown += delegate(object sender, MouseButtonEventArgs e) { HandleRightMouseDown((ItemsControl)view, state, e); };
             ((FrameworkElement)view).ContextMenuOpening += delegate(object sender, ContextMenuEventArgs e) { BuildAndAssignContextMenu((FrameworkElement)view, state, e); };
             element.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e) { HandleLeftMouseDown((ItemsControl)view, state, e); };
@@ -377,6 +513,7 @@ namespace Ferry
             bool chrome = IsViewChrome(e.OriginalSource as DependencyObject, view);
             TabViewContext ctx = contexts[state.Id];
             ctx.ItemDragArmed = false;
+            if (IsInlineRenameEditorSource(e.OriginalSource as DependencyObject)) return;
 
             if (!hitItem && !chrome)
             {
@@ -528,6 +665,18 @@ namespace Ferry
             return false;
         }
 
+        private bool IsInlineRenameEditorSource(DependencyObject source)
+        {
+            DependencyObject current = source;
+            while (current != null)
+            {
+                TextBox editor = current as TextBox;
+                if (editor != null && string.Equals(Convert.ToString(editor.Tag), InlineRenameEditorTag, StringComparison.Ordinal)) return true;
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return false;
+        }
+
         private void ClearSelection(TabState state)
         {
             if (state == null || !contexts.ContainsKey(state.Id)) return;
@@ -578,7 +727,7 @@ namespace Ferry
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item("Cut", delegate { ClipboardHelper.Copy(paths, true); }));
                 menu.Items.Add(Item("Copy", delegate { ClipboardHelper.Copy(paths, false); }));
-                menu.Items.Add(Item("Rename", delegate { RenameSelected(state); }));
+                menu.Items.Add(Item(paths.Count > 1 ? "Batch Rename…" : "Rename", delegate { RenameSelected(state); }));
                 menu.Items.Add(Item("Delete", delegate { DeleteSelected(state, false); }));
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item("Compress to ZIP", delegate { CompressSelected(state, paths); }));
@@ -789,10 +938,11 @@ namespace Ferry
         {
             if (e.Source != tabs) return;
             if (searchDebounceTimer != null) searchDebounceTimer.Stop();
-            if (lastSelectedContext != null && lastSelectedContext != ActiveContext) CaptureColumnSettings(lastSelectedContext);
             TabViewContext now = ActiveContext;
+            if (lastSelectedContext != null && lastSelectedContext != now) { CaptureColumnSettings(lastSelectedContext); CancelGridThumbnailLoad(lastSelectedContext); }
             if (now != null && now != lastSelectedContext) BuildListColumns(now, now.State.IsSearching);
             lastSelectedContext = now;
+            if (now != null && string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) StartGridThumbnailLoad(now);
             UpdateToolbarForActive(); UpdateStatus();
         }
 
@@ -825,7 +975,7 @@ namespace Ferry
             if (addHistory && !string.Equals(state.CurrentPath, path, StringComparison.OrdinalIgnoreCase)) { state.BackHistory.Add(state.CurrentPath); state.ForwardHistory.Clear(); }
             state.CurrentPath = Path.GetFullPath(path); state.Title = TabState.BuildTitle(state.CurrentPath); state.IsSearching = false; state.SearchText = string.Empty; state.ClearUnsortedTail(); SetTabHeader(ctx);
             CancellationTokenSource cts = new CancellationTokenSource(); state.LoadCancellation = cts; CancellationToken token = cts.Token;
-            ResetItemsForView(ctx); BuildListColumns(ctx, false); ShowCurrentView(ctx); SetupWatcher(ctx); UpdateToolbarForActive(); statusText.Text = "Loading…";
+            ResetItemsForView(ctx); BuildListColumns(ctx, false); ShowCurrentView(ctx); SetupWatcher(ctx); UpdateToolbarForActive(); SetStatusMessage("Loading…");
             string expected = state.CurrentPath;
 
             Task.Run(delegate
@@ -846,7 +996,7 @@ namespace Ferry
                     }));
                 }
                 catch (OperationCanceledException) { }
-                catch (Exception ex) { Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested) statusText.Text = ex.Message; })); }
+                catch (Exception ex) { Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested) SetStatusMessage(ex.Message); })); }
             }, token);
         }
 
@@ -856,7 +1006,7 @@ namespace Ferry
             catch (Exception ex)
             {
                 Logger.Write("Refresh start failed: " + ex);
-                try { statusText.Text = "Refresh failed. Press F5 to retry."; } catch { }
+                try { SetStatusMessage("Refresh failed. Press F5 to retry."); } catch { }
             }
         }
 
@@ -904,7 +1054,7 @@ namespace Ferry
                         catch (Exception ex)
                         {
                             Logger.Write("Refresh UI reconciliation failed: " + ex);
-                            try { statusText.Text = "Refresh failed. Press F5 to retry."; } catch { }
+                            try { SetStatusMessage("Refresh failed. Press F5 to retry."); } catch { }
                         }
                     }));
                 }
@@ -912,7 +1062,7 @@ namespace Ferry
                 catch (Exception ex)
                 {
                     Logger.Write("Refresh enumeration failed: " + ex);
-                    try { Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested && generation == state.RefreshGeneration) statusText.Text = ex.Message; })); } catch { }
+                    try { Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested && generation == state.RefreshGeneration) SetStatusMessage(ex.Message); })); } catch { }
                 }
             }, token);
         }
@@ -998,7 +1148,7 @@ namespace Ferry
             if (addHistory && !state.IsRecycleBin) { state.BackHistory.Add(state.CurrentPath); state.ForwardHistory.Clear(); }
             state.CurrentPath = TabState.RecycleBinPath; state.Title = "Recycle Bin"; state.IsSearching = false; state.SearchText = string.Empty; state.ClearUnsortedTail(); SetTabHeader(ctx);
             CancellationTokenSource cts = new CancellationTokenSource(); state.LoadCancellation = cts; CancellationToken token = cts.Token;
-            ResetItemsForView(ctx); BuildListColumns(ctx, false); ShowCurrentView(ctx); SetupWatcher(ctx); UpdateToolbarForActive(); statusText.Text = "Loading Recycle Bin…";
+            ResetItemsForView(ctx); BuildListColumns(ctx, false); ShowCurrentView(ctx); SetupWatcher(ctx); UpdateToolbarForActive(); SetStatusMessage("Loading Recycle Bin…");
 
             Task.Run(delegate
             {
@@ -1023,7 +1173,12 @@ namespace Ferry
                         item.Created = entry.DeletedAt;
                         item.ItemCountText = entry.IsDirectory ? "—" : null;
                         item.TypeName = ShellInterop.GetTypeName(entry.OriginalPath, entry.IsDirectory);
-                        try { item.Icon = ShellInterop.GetThumbnailOrIcon(entry.RecycledPath, currentViewMode == "Grid" ? (int)settings.GridIconSize : 32); } catch { }
+                        try
+                        {
+                            item.ListIcon = ShellInterop.GetSmallTypeIcon(entry.RecycledPath, entry.IsDirectory);
+                            if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) item.Icon = ShellInterop.GetThumbnailOrIcon(entry.RecycledPath, (int)settings.GridIconSize);
+                        }
+                        catch { }
                         items.Add(item);
                     }
                     Dispatcher.BeginInvoke(new Action(delegate
@@ -1034,7 +1189,7 @@ namespace Ferry
                     }));
                 }
                 catch (OperationCanceledException) { }
-                catch (Exception ex) { Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested) statusText.Text = ex.Message; })); }
+                catch (Exception ex) { Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested) SetStatusMessage(ex.Message); })); }
             }, token);
         }
 
@@ -1047,6 +1202,7 @@ namespace Ferry
         private void ResetItemsForView(TabViewContext ctx)
         {
             if (ctx == null || ctx.State == null) return;
+            CancelGridThumbnailLoad(ctx);
             // Detach the controls first so clearing a large search result set does not force
             // WPF to synchronously recycle thousands of item containers on the UI thread.
             ctx.ListView.ItemsSource = null;
@@ -1069,6 +1225,10 @@ namespace Ferry
                 bool dir = (attrs & FileAttributes.Directory) != 0; FileSystemInfo fsi = dir ? (FileSystemInfo)new DirectoryInfo(path) : new FileInfo(path);
                 FileItem item = new FileItem(); item.FullPath = path; item.Name = fsi.Name; item.IsDirectory = dir; item.IsHidden = (attrs & FileAttributes.Hidden) != 0; item.Modified = fsi.LastWriteTime; item.Created = fsi.CreationTime; item.SizeBytes = dir ? (long?)null : ((FileInfo)fsi).Length; item.ItemCountText = dir ? "…" : null;
                 item.TypeName = dir ? "File folder" : (string.IsNullOrEmpty(Path.GetExtension(path)) ? "File" : Path.GetExtension(path).TrimStart('.').ToUpperInvariant() + " file");
+                // List view must have a cheap Shell icon as soon as the row appears.  Deferred
+                // metadata may refine it later, but a transient Shell failure must not leave the
+                // row blank until F5.
+                try { item.ListIcon = ShellInterop.GetSmallTypeIcon(path, dir); } catch { }
                 if (!string.IsNullOrEmpty(searchRoot)) { string parent = Path.GetDirectoryName(path); if (parent != null && parent.StartsWith(searchRoot, StringComparison.OrdinalIgnoreCase)) { string rel = parent.Substring(searchRoot.Length).TrimStart('\\'); item.RelativeLocation = string.IsNullOrEmpty(rel) ? "." : rel; } }
                 return item;
             }
@@ -1077,6 +1237,7 @@ namespace Ferry
 
         private void StartDeferredMetadata(TabState state, string expectedPath, CancellationToken token, bool sortWhenComplete)
         {
+            bool loadGridThumbnails = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase);
             FileItem[] items = state.Items.ToArray(); Queue<FileItem> queue = new Queue<FileItem>(items); object gate = new object(); int workers = Math.Min(4, Math.Max(1, Environment.ProcessorCount / 2)); Task[] tasks = new Task[workers];
             for (int w = 0; w < workers; w++)
             {
@@ -1086,9 +1247,16 @@ namespace Ferry
                     {
                         token.ThrowIfCancellationRequested(); FileItem item;
                         lock (gate) { if (queue.Count == 0) break; item = queue.Dequeue(); }
-                        string type = item.TypeName; ImageSource icon = null; string countText = item.ItemCountText; int? count = null;
-                        try { type = ShellInterop.GetTypeName(item.FullPath, item.IsDirectory); icon = ShellInterop.GetThumbnailOrIcon(item.FullPath, currentViewMode == "Grid" ? (int)settings.GridIconSize : 32); if (item.IsDirectory) { count = CountVisibleChildren(item.FullPath); countText = count.HasValue ? count.Value.ToString("N0") + " items" : "—"; } } catch { if (item.IsDirectory) countText = "—"; }
-                        Dispatcher.BeginInvoke(new Action(delegate { if (token.IsCancellationRequested || state.CurrentPath != expectedPath || state.IsSearching) return; item.TypeName = type; item.Icon = icon; item.ItemCount = count; item.ItemCountText = countText; }));
+                        string type = item.TypeName; ImageSource listIcon = null; ImageSource thumbnail = null; string countText = item.ItemCountText; int? count = null;
+                        try
+                        {
+                            type = ShellInterop.GetTypeNameFast(item.FullPath, item.IsDirectory);
+                            listIcon = item.ListIcon ?? ShellInterop.GetSmallTypeIcon(item.FullPath, item.IsDirectory);
+                            if (loadGridThumbnails) thumbnail = ShellInterop.GetThumbnailOrIcon(item.FullPath, (int)settings.GridIconSize);
+                            if (item.IsDirectory) { count = CountVisibleChildren(item.FullPath); countText = count.HasValue ? count.Value.ToString("N0") + " items" : "—"; }
+                        }
+                        catch { if (item.IsDirectory) countText = "—"; }
+                        Dispatcher.BeginInvoke(new Action(delegate { if (token.IsCancellationRequested || state.CurrentPath != expectedPath || state.IsSearching) return; item.TypeName = type; if (listIcon != null) item.ListIcon = listIcon; if (thumbnail != null) item.Icon = thumbnail; item.ItemCount = count; item.ItemCountText = countText; }));
                     }
                 }, token);
             }
@@ -1154,7 +1322,7 @@ namespace Ferry
                 ctx.PreSearchItems = new List<FileItem>(state.Items);
                 ctx.PreSearchSelection = new HashSet<string>(GetSelectedPaths(state), StringComparer.OrdinalIgnoreCase);
             }
-            state.CancelBackgroundWork(); state.IsSearching = true; state.SearchText = query; ResetItemsForView(ctx); BuildListColumns(ctx, true); ShowCurrentView(ctx); statusText.Text = "Searching…";
+            state.CancelBackgroundWork(); state.IsSearching = true; state.SearchText = query; ResetItemsForView(ctx); BuildListColumns(ctx, true); ShowCurrentView(ctx); SetStatusMessage("Searching…");
             CancellationTokenSource cts = new CancellationTokenSource(); state.SearchCancellation = cts; CancellationToken token = cts.Token; string root = state.CurrentPath; ConcurrentQueue<FileItem> pending = new ConcurrentQueue<FileItem>();
             DispatcherTimer drain = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(70) };
             ctx.SearchDrainTimer = drain;
@@ -1177,8 +1345,24 @@ namespace Ferry
 
         private void StartDeferredSearchMetadata(TabState state, string root, CancellationToken token)
         {
+            bool loadGridThumbnails = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase);
             FileItem[] items = state.Items.ToArray(); Queue<FileItem> queue = new Queue<FileItem>(items); object gate = new object(); Task[] tasks = new Task[Math.Min(4, Math.Max(1, Environment.ProcessorCount / 2))];
-            for (int i = 0; i < tasks.Length; i++) tasks[i] = Task.Run(delegate { while (true) { token.ThrowIfCancellationRequested(); FileItem item; lock (gate) { if (queue.Count == 0) break; item = queue.Dequeue(); } try { string type = ShellInterop.GetTypeName(item.FullPath, item.IsDirectory); ImageSource icon = ShellInterop.GetThumbnailOrIcon(item.FullPath, currentViewMode == "Grid" ? (int)settings.GridIconSize : 32); int? count = item.IsDirectory ? CountVisibleChildren(item.FullPath) : (int?)null; Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested && state.IsSearching) { item.TypeName = type; item.Icon = icon; if (item.IsDirectory) { item.ItemCount = count; item.ItemCountText = count.HasValue ? count.Value.ToString("N0") + " items" : "—"; } } })); } catch { } } }, token);
+            for (int i = 0; i < tasks.Length; i++) tasks[i] = Task.Run(delegate
+            {
+                while (true)
+                {
+                    token.ThrowIfCancellationRequested(); FileItem item; lock (gate) { if (queue.Count == 0) break; item = queue.Dequeue(); }
+                    try
+                    {
+                        string type = ShellInterop.GetTypeNameFast(item.FullPath, item.IsDirectory);
+                        ImageSource listIcon = item.ListIcon ?? ShellInterop.GetSmallTypeIcon(item.FullPath, item.IsDirectory);
+                        ImageSource thumbnail = loadGridThumbnails ? ShellInterop.GetThumbnailOrIcon(item.FullPath, (int)settings.GridIconSize) : null;
+                        int? count = item.IsDirectory ? CountVisibleChildren(item.FullPath) : (int?)null;
+                        Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested && state.IsSearching) { item.TypeName = type; if (listIcon != null) item.ListIcon = listIcon; if (thumbnail != null) item.Icon = thumbnail; if (item.IsDirectory) { item.ItemCount = count; item.ItemCountText = count.HasValue ? count.Value.ToString("N0") + " items" : "—"; } } }));
+                    }
+                    catch { }
+                }
+            }, token);
             Task.WhenAll(tasks).ContinueWith(delegate { Dispatcher.BeginInvoke(new Action(delegate { if (!token.IsCancellationRequested && state.IsSearching) { ApplySort(state, true); UpdateStatus(); } })); });
         }
 
@@ -1514,19 +1698,159 @@ namespace Ferry
         private void RenameSelected(TabState state)
         {
             if (state == null || state.IsRecycleBin) return;
-            List<string> paths = GetSelectedPaths(state); if (paths.Count == 0) return;
-            if (paths.Count == 1)
+            List<FileItem> selectedItems = GetSelectedItems(state); if (selectedItems.Count == 0) return;
+            if (selectedItems.Count == 1)
             {
-                string path = paths[0]; string currentName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)); string extension = RenameEngine.GetExtension(path); int selectLength = Directory.Exists(path) ? currentName.Length : Math.Max(0, currentName.Length - extension.Length); PromptDialog d = new PromptDialog(this, "Rename", "New name", currentName, 0, selectLength); if (d.ShowDialog() != true) return; string error = RenameEngine.ValidateBaseName(d.Value); if (error != null) { MessageBox.Show(this, error, "Ferry", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-                RenameEntry entry = new RenameEntry { SourcePath = path, CurrentName = currentName, NewBaseName = d.Value, TargetPath = RenameEngine.BuildTargetPathFullName(path, d.Value), NewName = d.Value, IsValid = true };
-                List<RenameEntry> entries = new List<RenameEntry>(); entries.Add(entry); error = RenameEngine.ValidateBatch(entries); if (error != null) { MessageBox.Show(this, error, "Ferry", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-                try { lastRenameUndo = RenameEngine.ExecuteRename(entries); ScheduleFolderRefresh(state); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); }
+                BeginInlineRename(state, selectedItems[0]);
+                return;
             }
-            else
+
+            // Ferry keeps its explicit batch-rename tool for a multi-selection. Normal one-item
+            // Rename (F2/context menu) is now fully inline, matching Explorer.
+            List<string> paths = GetSelectedPaths(state);
+            RenameDialog dialog = new RenameDialog(this, paths);
+            if (dialog.ShowDialog() == true) { lastRenameUndo = dialog.UndoRecords; ScheduleFolderRefresh(state); }
+        }
+
+        private void BeginInlineRename(TabState state, FileItem item)
+        {
+            if (state == null || item == null || state.IsRecycleBin || !contexts.ContainsKey(state.Id)) return;
+            TabViewContext ctx = contexts[state.Id];
+            CancelOtherInlineRenames(ctx, item);
+            Selector selector = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase) ? (Selector)ctx.GridView : (Selector)ctx.ListView;
+            SetSingleSelection(selector, item);
+            item.BeginRename();
+            if (selector is ListView) ((ListView)selector).ScrollIntoView(item); else if (selector is ListBox) ((ListBox)selector).ScrollIntoView(item);
+            UpdateStatus();
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate { FocusInlineRenameEditor(ctx, selector, item); }));
+        }
+
+        private void CancelOtherInlineRenames(TabViewContext ctx, FileItem except)
+        {
+            if (ctx == null || ctx.State == null) return;
+            for (int i = 0; i < ctx.State.Items.Count; i++)
             {
-                // SelectedItems follows view order, preserving the Ferry-visible numbering rule.
-                RenameDialog dialog = new RenameDialog(this, paths); if (dialog.ShowDialog() == true) { lastRenameUndo = dialog.UndoRecords; ScheduleFolderRefresh(state); }
+                FileItem candidate = ctx.State.Items[i];
+                if (candidate != null && candidate != except && candidate.IsRenaming) candidate.CancelRename();
             }
+        }
+
+        private void FocusInlineRenameEditor(TabViewContext ctx, Selector selector, FileItem item)
+        {
+            FocusInlineRenameEditor(ctx, selector, item, 0);
+        }
+
+        private void FocusInlineRenameEditor(TabViewContext ctx, Selector selector, FileItem item, int attempt)
+        {
+            if (ctx == null || selector == null || item == null || !item.IsRenaming) return;
+            try
+            {
+                ctx.Container.UpdateLayout();
+                DependencyObject container = null;
+                ListView lv = selector as ListView; if (lv != null) container = lv.ItemContainerGenerator.ContainerFromItem(item) as DependencyObject;
+                ListBox lb = selector as ListBox; if (lb != null) container = lb.ItemContainerGenerator.ContainerFromItem(item) as DependencyObject;
+                TextBox editor = container == null ? null : FindInlineRenameEditor(container);
+                if (editor == null)
+                {
+                    if (attempt < 3) Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(delegate { FocusInlineRenameEditor(ctx, selector, item, attempt + 1); }));
+                    return;
+                }
+                editor.Focus();
+                string text = editor.Text ?? string.Empty;
+                string extension = item.IsDirectory ? string.Empty : Path.GetExtension(text);
+                int selectionLength = item.IsDirectory ? text.Length : Math.Max(0, text.Length - extension.Length);
+                editor.Select(0, selectionLength);
+            }
+            catch
+            {
+                if (attempt < 3) Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(delegate { FocusInlineRenameEditor(ctx, selector, item, attempt + 1); }));
+            }
+        }
+
+        private TextBox FindInlineRenameEditor(DependencyObject root)
+        {
+            if (root == null) return null;
+            TextBox own = root as TextBox;
+            if (own != null && string.Equals(Convert.ToString(own.Tag), InlineRenameEditorTag, StringComparison.Ordinal)) return own;
+            int count = 0; try { count = VisualTreeHelper.GetChildrenCount(root); } catch { return null; }
+            for (int i = 0; i < count; i++)
+            {
+                TextBox found = FindInlineRenameEditor(VisualTreeHelper.GetChild(root, i));
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        private void InlineRenameEditorLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            TextBox editor = sender as TextBox; FileItem item = editor == null ? null : editor.DataContext as FileItem;
+            if (editor == null || item == null || !item.IsRenaming) return;
+            TabViewContext ctx = FindContextForItem(item);
+            if (ctx != null) CommitInlineRename(ctx.State, item, editor);
+        }
+
+        private TabViewContext FindContextForItem(FileItem item)
+        {
+            if (item == null) return null;
+            foreach (TabViewContext ctx in contexts.Values) if (ctx != null && ctx.State != null && ctx.State.Items.Contains(item)) return ctx;
+            return null;
+        }
+
+        private bool CommitInlineRename(TabState state, FileItem item, TextBox editor)
+        {
+            if (state == null || item == null || !item.IsRenaming) return true;
+            if (editor != null)
+            {
+                BindingExpression binding = editor.GetBindingExpression(TextBox.TextProperty);
+                if (binding != null) binding.UpdateSource();
+            }
+            string newName = item.RenameText ?? string.Empty;
+            if (string.Equals(newName, item.Name, StringComparison.Ordinal)) { item.CancelRename(); return true; }
+            string error = RenameEngine.ValidateBaseName(newName);
+            if (error != null) { KeepInlineRenameAfterError(state, item, editor, error); return false; }
+
+            string oldPath = item.FullPath;
+            string targetPath = RenameEngine.BuildTargetPathFullName(oldPath, newName);
+            RenameEntry entry = new RenameEntry { SourcePath = oldPath, CurrentName = item.Name, NewBaseName = newName, TargetPath = targetPath, NewName = newName, IsValid = true };
+            List<RenameEntry> entries = new List<RenameEntry>(); entries.Add(entry);
+            error = RenameEngine.ValidateBatch(entries);
+            if (error != null) { KeepInlineRenameAfterError(state, item, editor, error); return false; }
+
+            try
+            {
+                lastRenameUndo = RenameEngine.ExecuteRename(entries);
+                long tailOrder; bool wasTail = state.TryGetUnsortedTailOrder(oldPath, out tailOrder);
+                state.RemoveUnsortedTail(oldPath); if (wasTail) state.MarkUnsortedTail(targetPath);
+                item.ApplyRenameResult(targetPath);
+                item.TypeName = item.IsDirectory ? "File folder" : (string.IsNullOrEmpty(Path.GetExtension(targetPath)) ? "File" : Path.GetExtension(targetPath).TrimStart('.').ToUpperInvariant() + " file");
+                item.ListIcon = null; item.Icon = null;
+                ScheduleFolderRefresh(state);
+                if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase) && contexts.ContainsKey(state.Id)) StartGridThumbnailLoad(contexts[state.Id]);
+                UpdateStatus();
+                return true;
+            }
+            catch (Exception ex) { KeepInlineRenameAfterError(state, item, editor, ex.Message); return false; }
+        }
+
+        private void KeepInlineRenameAfterError(TabState state, FileItem item, TextBox editor, string message)
+        {
+            MessageBox.Show(this, message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (item == null) return;
+            item.IsRenaming = true;
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate
+            {
+                if (editor != null && item.IsRenaming) { editor.Focus(); editor.SelectAll(); }
+                else if (state != null && contexts.ContainsKey(state.Id))
+                {
+                    Selector selector = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase) ? (Selector)contexts[state.Id].GridView : (Selector)contexts[state.Id].ListView;
+                    FocusInlineRenameEditor(contexts[state.Id], selector, item);
+                }
+            }));
+        }
+
+        private void CancelInlineRename(FileItem item)
+        {
+            if (item != null) item.CancelRename();
         }
 
         private void InvalidateRenameUndo()
@@ -1577,11 +1901,20 @@ namespace Ferry
 
         private void CreateNewFolder(TabState state)
         {
-            if (state == null || state.IsRecycleBin) return;
+            if (state == null || state.IsRecycleBin || state.IsSearching || !contexts.ContainsKey(state.Id)) return;
             try
             {
                 InvalidateRenameUndo();
-                string basePath = Path.Combine(state.CurrentPath, "New folder"); string path = basePath; int n = 2; while (Directory.Exists(path) || File.Exists(path)) path = basePath + " (" + n++ + ")"; Directory.CreateDirectory(path); ScheduleFolderRefresh(state);
+                string basePath = Path.Combine(state.CurrentPath, "New folder"); string path = basePath; int n = 2; while (Directory.Exists(path) || File.Exists(path)) path = basePath + " (" + n++ + ")";
+                Directory.CreateDirectory(path);
+                FileItem item = CreateBasicItem(path, null);
+                if (item == null) { ScheduleFolderRefresh(state); return; }
+                try { item.ListIcon = ShellInterop.GetSmallTypeIcon(path, true); if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) item.Icon = ShellInterop.GetThumbnailOrIcon(path, (int)settings.GridIconSize); } catch { }
+                item.ItemCount = 0; item.ItemCountText = "0 items";
+                state.MarkUnsortedTail(path);
+                state.Items.Add(item);
+                ApplySort(state, true, false);
+                BeginInlineRename(state, item);
             }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
@@ -1597,17 +1930,25 @@ namespace Ferry
             if (state == null || state.IsRecycleBin || paths == null || paths.Count == 0) return;
             InvalidateRenameUndo(); List<string> copy = new List<string>(); for (int i = 0; i < paths.Count; i++) copy.Add(paths[i]);
             string outputDirectory = state.CurrentPath;
-            statusText.Text = "Compressing to ZIP…";
+            int activityId = BeginArchiveActivity("Compressing to ZIP…");
             Task.Run(delegate
             {
                 try
                 {
                     ArchiveHelper.CompressToZip(copy, outputDirectory);
-                    Dispatcher.BeginInvoke(new Action(delegate { if (!state.IsSearching) ScheduleFolderRefresh(state); else UpdateStatus(); }));
+                    Dispatcher.BeginInvoke(new Action(delegate
+                    {
+                        EndArchiveActivity(activityId, "ZIP compression complete.");
+                        if (!state.IsSearching) ScheduleFolderRefresh(state); else UpdateStatus();
+                    }));
                 }
                 catch (Exception ex)
                 {
-                    Dispatcher.BeginInvoke(new Action(delegate { UpdateStatus(); MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); }));
+                    Dispatcher.BeginInvoke(new Action(delegate
+                    {
+                        EndArchiveActivity(activityId, null);
+                        MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }));
                 }
             });
         }
@@ -1615,17 +1956,26 @@ namespace Ferry
         private void ExtractZip(TabState state, string zipPath, bool namedFolder)
         {
             if (state == null || state.IsRecycleBin || string.IsNullOrEmpty(zipPath)) return;
-            InvalidateRenameUndo(); statusText.Text = "Extracting ZIP…";
+            InvalidateRenameUndo();
+            int activityId = BeginArchiveActivity("Extracting ZIP…");
             Task.Run(delegate
             {
                 try
                 {
                     if (namedFolder) ArchiveHelper.ExtractToNamedFolder(zipPath); else ArchiveHelper.ExtractHere(zipPath);
-                    Dispatcher.BeginInvoke(new Action(delegate { if (!state.IsSearching) ScheduleFolderRefresh(state); else UpdateStatus(); }));
+                    Dispatcher.BeginInvoke(new Action(delegate
+                    {
+                        EndArchiveActivity(activityId, "ZIP extraction complete.");
+                        if (!state.IsSearching) ScheduleFolderRefresh(state); else UpdateStatus();
+                    }));
                 }
                 catch (Exception ex)
                 {
-                    Dispatcher.BeginInvoke(new Action(delegate { UpdateStatus(); MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); }));
+                    Dispatcher.BeginInvoke(new Action(delegate
+                    {
+                        EndArchiveActivity(activityId, null);
+                        MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }));
                 }
             });
         }
@@ -1641,8 +1991,165 @@ namespace Ferry
             BuildSidebar();
         }
 
+        private ListBoxItem GetPinnedListItem(DependencyObject source)
+        {
+            DependencyObject current = source;
+            while (current != null && current != pinnedListBox)
+            {
+                ListBoxItem item = current as ListBoxItem;
+                if (item != null) return item;
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
+
+        private void PinnedListMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left || pinnedListBox == null) return;
+            ListBoxItem container = GetPinnedListItem(e.OriginalSource as DependencyObject);
+            PinnedSidebarItem item = container != null ? container.DataContext as PinnedSidebarItem : null;
+            pinnedDragSourceItem = item;
+            pinnedDragStarted = false;
+            pinnedDragStart = e.GetPosition(pinnedListBox);
+        }
+
+        private void PinnedListMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left || pinnedListBox == null) return;
+            PinnedSidebarItem sourceItem = pinnedDragSourceItem;
+            bool wasDrag = pinnedDragStarted;
+            pinnedDragSourceItem = null;
+            pinnedDragStarted = false;
+            if (wasDrag || sourceItem == null) return;
+
+            ListBoxItem container = GetPinnedListItem(e.OriginalSource as DependencyObject);
+            PinnedSidebarItem releasedItem = container != null ? container.DataContext as PinnedSidebarItem : null;
+            if (releasedItem != null && object.ReferenceEquals(releasedItem, sourceItem))
+            {
+                Navigate(releasedItem.FullPath, true);
+                pinnedListBox.SelectedItem = null;
+                e.Handled = true;
+            }
+        }
+
+        private void PinnedListMouseMove(object sender, MouseEventArgs e)
+        {
+            if (pinnedListBox == null || pinnedDragSourceItem == null || e.LeftButton != MouseButtonState.Pressed || pinnedDragStarted) return;
+            Point current = e.GetPosition(pinnedListBox);
+            if (Math.Abs(current.X - pinnedDragStart.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(current.Y - pinnedDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+            PinnedSidebarItem sourceItem = pinnedDragSourceItem;
+            pinnedDragStarted = true;
+            DataObject data = new DataObject();
+            data.SetData(PinnedFolderDragFormat, sourceItem.FullPath);
+            try { DragDrop.DoDragDrop(pinnedListBox, data, DragDropEffects.Move); }
+            finally
+            {
+                pinnedDragSourceItem = null;
+                pinnedDragStarted = false;
+                if (pinnedListBox != null) pinnedListBox.SelectedItem = null;
+                ClearPinnedDropIndicator();
+            }
+        }
+
+        private void PinnedListMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (pinnedListBox == null) return;
+            ListBoxItem container = GetPinnedListItem(e.OriginalSource as DependencyObject);
+            if (container != null) pinnedListBox.SelectedItem = container.DataContext;
+        }
+
+        private int GetPinnedDropSlot(Point pointer)
+        {
+            if (pinnedListBox == null || pinnedSidebarItems.Count == 0) return -1;
+            for (int i = 0; i < pinnedSidebarItems.Count; i++)
+            {
+                ListBoxItem container = pinnedListBox.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
+                if (container == null) continue;
+                Point topLeft;
+                try { topLeft = container.TranslatePoint(new Point(0, 0), pinnedListBox); }
+                catch { continue; }
+                double midpoint = topLeft.Y + Math.Max(1.0, container.ActualHeight) / 2.0;
+                if (pointer.Y < midpoint) return i;
+            }
+            return pinnedSidebarItems.Count;
+        }
+
+        private void PinnedListDragOver(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(PinnedFolderDragFormat) || pinnedListBox == null) return;
+            int slot = GetPinnedDropSlot(e.GetPosition(pinnedListBox));
+            if (slot >= 0) ShowPinnedDropIndicator(slot); else ClearPinnedDropIndicator();
+            e.Effects = slot >= 0 ? DragDropEffects.Move : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void PinnedListDrop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(PinnedFolderDragFormat) || pinnedListBox == null) return;
+            string draggedPath = e.Data.GetData(PinnedFolderDragFormat) as string;
+            int slot = pinnedDropSlot >= 0 ? pinnedDropSlot : GetPinnedDropSlot(e.GetPosition(pinnedListBox));
+            ClearPinnedDropIndicator();
+            if (!string.IsNullOrEmpty(draggedPath) && slot >= 0) ReorderPinnedFolderToSlot(draggedPath, slot);
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+        }
+
+        private void ShowPinnedDropIndicator(int slot)
+        {
+            if (pinnedListBox == null || pinnedSidebarItems.Count == 0) { ClearPinnedDropIndicator(); return; }
+            slot = Math.Max(0, Math.Min(slot, pinnedSidebarItems.Count));
+            if (pinnedDropSlot == slot) return;
+            ClearPinnedDropIndicator();
+            pinnedDropSlot = slot;
+
+            if (slot < pinnedSidebarItems.Count)
+            {
+                ListBoxItem target = pinnedListBox.ItemContainerGenerator.ContainerFromIndex(slot) as ListBoxItem;
+                if (target != null)
+                {
+                    target.BorderBrush = SystemColors.HighlightBrush;
+                    target.BorderThickness = new Thickness(0, 2, 0, 0);
+                }
+            }
+            else
+            {
+                ListBoxItem target = pinnedListBox.ItemContainerGenerator.ContainerFromIndex(pinnedSidebarItems.Count - 1) as ListBoxItem;
+                if (target != null)
+                {
+                    target.BorderBrush = SystemColors.HighlightBrush;
+                    target.BorderThickness = new Thickness(0, 0, 0, 2);
+                }
+            }
+        }
+
+        private void ClearPinnedDropIndicator()
+        {
+            if (pinnedListBox != null)
+            {
+                for (int i = 0; i < pinnedSidebarItems.Count; i++)
+                {
+                    ListBoxItem container = pinnedListBox.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
+                    if (container == null) continue;
+                    container.BorderThickness = new Thickness(0);
+                    container.BorderBrush = null;
+                }
+            }
+            pinnedDropSlot = -1;
+        }
+
         private void SidebarDragOver(object sender, DragEventArgs e)
         {
+            if (e.Data.GetDataPresent(PinnedFolderDragFormat))
+            {
+                // Pinned reordering is intentionally owned by the dedicated Pinned ListBox.
+                // Dropping a pin elsewhere in the sidebar does not move or unpin it.
+                ClearPinnedDropIndicator();
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
+            }
+
             if (!e.Data.GetDataPresent(DataFormats.FileDrop)) { e.Effects = DragDropEffects.None; e.Handled = true; return; }
             string[] paths = e.Data.GetData(DataFormats.FileDrop) as string[]; bool hasFolder = false;
             if (paths != null) for (int i = 0; i < paths.Length; i++) if (Directory.Exists(paths[i])) { hasFolder = true; break; }
@@ -1653,6 +2160,14 @@ namespace Ferry
         {
             try
             {
+                if (e.Data.GetDataPresent(PinnedFolderDragFormat))
+                {
+                    ClearPinnedDropIndicator();
+                    e.Effects = DragDropEffects.None;
+                    e.Handled = true;
+                    return;
+                }
+
                 string[] paths = e.Data.GetData(DataFormats.FileDrop) as string[]; if (paths == null) return;
                 bool changed = false;
                 for (int i = 0; i < paths.Length; i++)
@@ -1663,7 +2178,34 @@ namespace Ferry
                 if (changed) { try { SettingsStore.Save(settings); } catch { } BuildSidebar(); }
                 e.Handled = true;
             }
-            catch { }
+            catch { ClearPinnedDropIndicator(); }
+        }
+
+        private void ReorderPinnedFolderToSlot(string draggedPath, int originalSlot)
+        {
+            if (string.IsNullOrEmpty(draggedPath) || pinnedSidebarItems.Count == 0) return;
+            int sourceIndex = -1;
+            for (int i = 0; i < pinnedSidebarItems.Count; i++)
+            {
+                if (string.Equals(pinnedSidebarItems[i].FullPath, draggedPath, StringComparison.OrdinalIgnoreCase)) { sourceIndex = i; break; }
+            }
+            if (sourceIndex < 0) return;
+
+            int targetIndex = Math.Max(0, Math.Min(originalSlot, pinnedSidebarItems.Count));
+            if (sourceIndex < targetIndex) targetIndex--;
+            targetIndex = Math.Max(0, Math.Min(targetIndex, pinnedSidebarItems.Count - 1));
+            if (targetIndex != sourceIndex) pinnedSidebarItems.Move(sourceIndex, targetIndex);
+
+            List<string> ordered = new List<string>();
+            for (int i = 0; i < pinnedSidebarItems.Count; i++) ordered.Add(pinnedSidebarItems[i].FullPath);
+            for (int i = 0; i < settings.PinnedFolders.Count; i++)
+            {
+                string path = settings.PinnedFolders[i];
+                if (string.IsNullOrEmpty(path) || Directory.Exists(path)) continue;
+                ordered.Add(path);
+            }
+            settings.PinnedFolders = ordered;
+            try { SettingsStore.Save(settings); } catch { }
         }
 
         private void EmptyRecycleBin()
@@ -1689,12 +2231,60 @@ namespace Ferry
 
         private void SetTemporaryView(string mode)
         {
-            currentViewMode = mode; foreach (TabViewContext ctx in contexts.Values) ShowCurrentView(ctx); UpdateStatus();
+            currentViewMode = mode;
+            bool grid = string.Equals(mode, "Grid", StringComparison.OrdinalIgnoreCase);
+            foreach (TabViewContext ctx in contexts.Values)
+            {
+                ShowCurrentView(ctx);
+                if (!grid) CancelGridThumbnailLoad(ctx);
+            }
+            if (grid && ActiveContext != null) StartGridThumbnailLoad(ActiveContext);
+            UpdateStatus();
         }
 
         private void ShowCurrentView(TabViewContext ctx)
         {
             bool list = string.Equals(currentViewMode, "List", StringComparison.OrdinalIgnoreCase); ctx.ListView.Visibility = list ? Visibility.Visible : Visibility.Collapsed; ctx.GridView.Visibility = list ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void CancelGridThumbnailLoad(TabViewContext ctx)
+        {
+            if (ctx == null || ctx.GridThumbnailCancellation == null) return;
+            try { ctx.GridThumbnailCancellation.Cancel(); } catch { }
+            ctx.GridThumbnailCancellation = null;
+        }
+
+        private void StartGridThumbnailLoad(TabViewContext ctx)
+        {
+            if (ctx == null || ctx.State == null) return;
+            CancelGridThumbnailLoad(ctx);
+            FileItem[] pending = ctx.State.Items.Where(delegate(FileItem item) { return item != null && item.Icon == null; }).ToArray();
+            if (pending.Length == 0) return;
+            CancellationTokenSource cts = new CancellationTokenSource();
+            ctx.GridThumbnailCancellation = cts;
+            CancellationToken token = cts.Token;
+            TabState state = ctx.State;
+            Queue<FileItem> queue = new Queue<FileItem>(pending); object gate = new object();
+            int workerCount = Math.Min(2, Math.Max(1, Environment.ProcessorCount / 2));
+            for (int worker = 0; worker < workerCount; worker++)
+            {
+                Task.Run(delegate
+                {
+                    while (true)
+                    {
+                        token.ThrowIfCancellationRequested(); FileItem item;
+                        lock (gate) { if (queue.Count == 0) break; item = queue.Dequeue(); }
+                        ImageSource thumbnail = null;
+                        try { thumbnail = ShellInterop.GetThumbnailOrIcon(item.FullPath, (int)settings.GridIconSize); } catch { }
+                        if (thumbnail == null) continue;
+                        Dispatcher.BeginInvoke(new Action(delegate
+                        {
+                            if (token.IsCancellationRequested || !contexts.ContainsKey(state.Id) || !state.Items.Contains(item)) return;
+                            item.Icon = thumbnail;
+                        }));
+                    }
+                }, token);
+            }
         }
 
         private void ShowColumnsMenu(object sender, RoutedEventArgs e)
@@ -1709,24 +2299,146 @@ namespace Ferry
             button.ContextMenu = menu; menu.PlacementTarget = button; menu.Placement = PlacementMode.Bottom; menu.IsOpen = true;
         }
 
+        private void ApplySidebarLayoutFromSettings()
+        {
+            if (mainGrid == null || mainGrid.ColumnDefinitions.Count < 2) return;
+            ColumnDefinition sidebarColumn = mainGrid.ColumnDefinitions[0];
+            if (settings.SidebarVisible)
+            {
+                double width = Math.Max(50, Math.Min(480, settings.SidebarWidth));
+                settings.SidebarWidth = width;
+                sidebarColumn.MinWidth = 50;
+                sidebarColumn.MaxWidth = 480;
+                sidebarColumn.Width = new GridLength(width);
+                if (sidebarBorder != null) sidebarBorder.Visibility = Visibility.Visible;
+                if (sidebarSplitter != null) sidebarSplitter.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                sidebarColumn.MinWidth = 0;
+                sidebarColumn.MaxWidth = double.PositiveInfinity;
+                sidebarColumn.Width = new GridLength(0);
+                if (sidebarBorder != null) sidebarBorder.Visibility = Visibility.Collapsed;
+                if (sidebarSplitter != null) sidebarSplitter.Visibility = Visibility.Collapsed;
+            }
+        }
+
         private void ShowSettings(object sender, RoutedEventArgs e)
         {
-            CaptureColumnSettings(); SettingsWindow window = new SettingsWindow(this, settings); if (window.ShowDialog() == true && window.Result != null) { settings = window.Result; Logger.Configure(settings.DebugLogging); currentViewMode = settings.DefaultView; mainGrid.ColumnDefinitions[0].Width = settings.SidebarVisible ? new GridLength(settings.SidebarWidth) : new GridLength(0); searchModeBox.SelectedItem = settings.SearchMode; BuildSidebar(); foreach (TabViewContext ctx in contexts.Values) { BuildListColumns(ctx, ctx.State.IsSearching); ShowCurrentView(ctx); if (!ctx.State.IsSearching) LoadFolder(ctx.State, ctx.State.CurrentPath, false); } SettingsStore.Save(settings); }
+            CaptureColumnSettings(); SettingsWindow window = new SettingsWindow(this, settings); if (window.ShowDialog() == true && window.Result != null) { settings = window.Result; Logger.Configure(settings.DebugLogging); currentViewMode = settings.DefaultView; ApplySidebarLayoutFromSettings(); searchModeBox.SelectedItem = settings.SearchMode; BuildSidebar(); foreach (TabViewContext ctx in contexts.Values) { BuildListColumns(ctx, ctx.State.IsSearching); ShowCurrentView(ctx); if (!ctx.State.IsSearching) LoadFolder(ctx.State, ctx.State.CurrentPath, false); } SettingsStore.Save(settings); }
         }
 
         private void CloseTab(TabState state)
         {
-            if (state == null || !contexts.ContainsKey(state.Id)) return; TabViewContext ctx = contexts[state.Id]; StopSearchDrain(ctx); state.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } tabs.Items.Remove(ctx.TabItem); contexts.Remove(state.Id); if (tabs.Items.Count == 0) Close();
+            if (state == null || !contexts.ContainsKey(state.Id)) return; TabViewContext ctx = contexts[state.Id]; StopSearchDrain(ctx); CancelGridThumbnailLoad(ctx); state.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } tabs.Items.Remove(ctx.TabItem); contexts.Remove(state.Id); if (tabs.Items.Count == 0) Close();
+        }
+
+        private int BeginArchiveActivity(string label)
+        {
+            int id = ++nextArchiveActivityId;
+            archiveActivities[id] = string.IsNullOrEmpty(label) ? "Archive operation in progress…" : label;
+            UpdateStatus();
+            return id;
+        }
+
+        private void EndArchiveActivity(int id, string completionMessage)
+        {
+            archiveActivities.Remove(id);
+            if (archiveActivities.Count == 0 && !string.IsNullOrEmpty(completionMessage))
+            {
+                ShowTimedStatusMessage(completionMessage, 3000);
+                return;
+            }
+            UpdateStatus();
+        }
+
+        private void ShowTimedStatusMessage(string message, int milliseconds)
+        {
+            transientStatusMessage = message ?? string.Empty;
+            transientStatusUntilUtc = DateTime.UtcNow.AddMilliseconds(Math.Max(1, milliseconds));
+            if (transientStatusTimer == null)
+            {
+                transientStatusTimer = new DispatcherTimer(DispatcherPriority.Background);
+                transientStatusTimer.Tick += delegate
+                {
+                    if (DateTime.UtcNow < transientStatusUntilUtc) return;
+                    transientStatusTimer.Stop();
+                    transientStatusMessage = null;
+                    UpdateStatus();
+                };
+            }
+            transientStatusTimer.Stop();
+            transientStatusTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, milliseconds));
+            transientStatusTimer.Start();
+            UpdateStatus();
+        }
+
+        private bool ShowTransientStatusMessage()
+        {
+            if (string.IsNullOrEmpty(transientStatusMessage)) return false;
+            if (DateTime.UtcNow >= transientStatusUntilUtc)
+            {
+                transientStatusMessage = null;
+                if (transientStatusTimer != null) transientStatusTimer.Stop();
+                return false;
+            }
+            if (statusProgress != null) statusProgress.Visibility = Visibility.Collapsed;
+            if (statusText != null) statusText.Text = transientStatusMessage;
+            return true;
+        }
+
+        private bool ShowArchiveActivityStatus()
+        {
+            if (archiveActivities.Count == 0) return false;
+            string label = null;
+            foreach (KeyValuePair<int, string> pair in archiveActivities) label = pair.Value;
+            if (archiveActivities.Count > 1) label = "Archive operations in progress… (" + archiveActivities.Count.ToString() + ")";
+            if (statusText != null) statusText.Text = label ?? "Archive operation in progress…";
+            if (statusProgress != null) statusProgress.Visibility = Visibility.Visible;
+            return true;
+        }
+
+        private void SetStatusMessage(string message)
+        {
+            if (ShowArchiveActivityStatus()) return;
+            if (ShowTransientStatusMessage()) return;
+            if (statusProgress != null) statusProgress.Visibility = Visibility.Collapsed;
+            if (statusText != null) statusText.Text = message ?? string.Empty;
         }
 
         private void UpdateStatus()
         {
-            TabState state = ActiveState; if (state == null) { statusText.Text = "Ready"; return; } List<string> selected = GetSelectedPaths(state); string prefix = state.IsSearching ? state.Items.Count.ToString("N0") + " results" : state.Items.Count.ToString("N0") + " items"; if (selected.Count > 0) prefix += "   •   " + selected.Count.ToString("N0") + " selected"; statusText.Text = prefix;
+            if (ShowArchiveActivityStatus()) return;
+            if (ShowTransientStatusMessage()) return;
+            if (statusProgress != null) statusProgress.Visibility = Visibility.Collapsed;
+            TabState state = ActiveState;
+            if (state == null) { if (statusText != null) statusText.Text = "Ready"; return; }
+            List<string> selected = GetSelectedPaths(state);
+            string prefix = state.IsSearching ? state.Items.Count.ToString("N0") + " results" : state.Items.Count.ToString("N0") + " items";
+            if (selected.Count > 0) prefix += "   •   " + selected.Count.ToString("N0") + " selected";
+            if (statusText != null) statusText.Text = prefix;
         }
 
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
             ModifierKeys mods = Keyboard.Modifiers; TabState state = ActiveState; Key key = e.Key == Key.System ? e.SystemKey : e.Key;
+            TextBox inlineEditor = Keyboard.FocusedElement as TextBox;
+            if (inlineEditor != null && string.Equals(Convert.ToString(inlineEditor.Tag), InlineRenameEditorTag, StringComparison.Ordinal))
+            {
+                FileItem renameItem = inlineEditor.DataContext as FileItem; TabViewContext renameContext = FindContextForItem(renameItem);
+                if (key == Key.Enter)
+                {
+                    bool committed = renameContext != null && CommitInlineRename(renameContext.State, renameItem, inlineEditor);
+                    if (committed && renameContext != null) { if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) renameContext.GridView.Focus(); else renameContext.ListView.Focus(); }
+                    e.Handled = true; return;
+                }
+                if (key == Key.Escape)
+                {
+                    CancelInlineRename(renameItem);
+                    if (renameContext != null) { if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) renameContext.GridView.Focus(); else renameContext.ListView.Focus(); }
+                    e.Handled = true; return;
+                }
+            }
             if (mods == ModifierKeys.Control && key == Key.T) { OpenNewTab(settings.HomePath, true); e.Handled = true; }
             else if (mods == ModifierKeys.Control && key == Key.W) { if (state != null) CloseTab(state); e.Handled = true; }
             else if (mods == ModifierKeys.Control && key == Key.Tab) { CycleTab(1); e.Handled = true; }
@@ -1791,12 +2503,32 @@ namespace Ferry
         private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             CaptureColumnSettings(); if (WindowState == WindowState.Normal) { settings.WindowWidth = Width; settings.WindowHeight = Height; settings.WindowLeft = Left; settings.WindowTop = Top; } settings.WindowMaximized = WindowState == WindowState.Maximized; settings.SidebarWidth = mainGrid.ColumnDefinitions[0].ActualWidth > 0 ? mainGrid.ColumnDefinitions[0].ActualWidth : settings.SidebarWidth; settings.SearchMode = Convert.ToString(searchModeBox.SelectedItem); try { SettingsStore.Save(settings); } catch { }
-            foreach (TabViewContext ctx in contexts.Values) { StopSearchDrain(ctx); ctx.State.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } }
+            foreach (TabViewContext ctx in contexts.Values) { StopSearchDrain(ctx); CancelGridThumbnailLoad(ctx); ctx.State.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } }
+        }
+
+        private sealed class PinnedSidebarItem
+        {
+            public PinnedSidebarItem(string name, string fullPath) { Name = name; FullPath = fullPath; }
+            public string Name { get; private set; }
+            public string FullPath { get; private set; }
+        }
+
+        private sealed class InverseBooleanToVisibilityConverter : IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            {
+                return value is bool && (bool)value ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            {
+                throw new NotSupportedException();
+            }
         }
 
         private sealed class TabViewContext
         {
-            public TabState State; public TabItem TabItem; public Grid Container; public ListView ListView; public ListBox GridView; public GridView ListGrid; public FileSystemWatcher Watcher; public DispatcherTimer RefreshTimer; public DispatcherTimer SearchDrainTimer;
+            public TabState State; public TabItem TabItem; public Grid Container; public ListView ListView; public ListBox GridView; public GridView ListGrid; public FileSystemWatcher Watcher; public DispatcherTimer RefreshTimer; public DispatcherTimer SearchDrainTimer; public CancellationTokenSource GridThumbnailCancellation;
             public bool IsReconciling;
             public List<FileItem> PreSearchItems; public HashSet<string> PreSearchSelection;
             public Control DropTargetContainer; public object DropTargetBackgroundLocal = DependencyProperty.UnsetValue; public object DropTargetBorderBrushLocal = DependencyProperty.UnsetValue; public object DropTargetBorderThicknessLocal = DependencyProperty.UnsetValue;

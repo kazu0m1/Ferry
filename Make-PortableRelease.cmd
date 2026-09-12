@@ -5,7 +5,7 @@ cd /d "%~dp0"
 call Build.cmd
 if errorlevel 1 exit /b 1
 
-set "VERSION=1.0.0"
+set "VERSION=1.0.1"
 set "DIST=%~dp0dist"
 set "STAGE=%DIST%\Ferry-v%VERSION%-win-portable"
 set "ZIP=%DIST%\Ferry-v%VERSION%-win-portable.zip"

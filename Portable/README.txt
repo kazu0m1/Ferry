@@ -1,4 +1,4 @@
-﻿Ferry v1.0.0 Portable
+﻿Ferry v1.0.1 Portable
 
 Ferry is a lightweight Windows 11 file manager inspired by the simplicity and workflow of GNOME Files (Nautilus).
 

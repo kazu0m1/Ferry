@@ -2,9 +2,9 @@
 
 **Project:** Ferry  
 **Target OS:** Windows 11  
-**Specification revision:** 1.0.18  
-**Implementation baseline:** Ferry public v1.0.0  
-**Document status:** Living v1.0 requirements baseline updated through Windows 11 field testing  
+**Specification revision:** 1.0.23  
+**Implementation baseline:** Ferry v1.0.1  
+**Document status:** Ferry v1.0.1 release baseline; living v1.0 requirements document  
 **UI language:** English only (v1.0)  
 **Primary distribution:** Portable  
 **Implementation direction:** Windows-native file browser using Windows Shell / OS capabilities wherever practical; current implementation assumption is C# + WPF with Windows Shell APIs.
@@ -147,7 +147,7 @@ Tabs are included because they provide high user value without requiring a heavy
 | FR-0311 | Windows-mounted network drives should be listed. | A+B | Should |
 | FR-0312 | Arbitrary folders shall be pinnable. | A | Must |
 | FR-0313 | Pinned folders shall be removable. | A | Must |
-| FR-0314 | Pinned-folder order should be manually reorderable. | A | Should |
+| FR-0314 | Pinned-folder order should be manually reorderable by drag and drop, with the resulting order persisted. | A | Should |
 | FR-0315 | Recent-folders history is out of scope. | C | — |
 | FR-0316 | Automatic frequently-used-folder inference is out of scope. | C | — |
 | FR-0317 | OneDrive shall not receive a dedicated Ferry sidebar subsystem. | C | — |
@@ -180,9 +180,9 @@ Tabs are included because they provide high user value without requiring a heavy
 | FR-0404 | In Grid view, a folder shall display its direct-child item count below the folder name. | A | Must |
 | FR-0405 | Item count shall count direct children only, not descendants recursively. | A | Must |
 | FR-0406 | Folder item counting shall be asynchronous. | A | Must |
-| FR-0407 | File icons shall use Windows Shell resources. | B | Must |
+| FR-0407 | List view shall use lightweight Windows Shell file-type icons; it shall not require content-thumbnail retrieval for ordinary List rows. | B | Must |
 | FR-0408 | Folder icons shall use Windows Shell resources. | B | Must |
-| FR-0409 | Thumbnails shall use Windows thumbnail infrastructure/cache where available. | B | Must |
+| FR-0409 | Grid thumbnails shall use Windows thumbnail infrastructure/cache where available and may be loaded progressively when Grid view is active. | B | Must |
 | FR-0410 | Grid icon size should be adjustable. | A | Should |
 | FR-0411 | File names shall be shown. | A | Must |
 | FR-0412 | File extensions shall be shown; Ferry shall not hide them automatically. | A | Must |
@@ -318,7 +318,7 @@ Ferry integrates the useful behavior of NautilusRenamer v1.1 rather than launchi
 
 | ID | Requirement | Class | Priority |
 |---|---|---:|---:|
-| FR-0701 | Single-item file/folder rename. | A+B | Must |
+| FR-0701 | Single-item file/folder rename shall use inline editing in the active List/Grid item rather than a separate rename dialog. | A+B | Must |
 | FR-0702 | `F2` starts single-item rename. | A | Must |
 | FR-0703 | Multiple selected items shall open the Ferry bulk-rename UI. | A | Must |
 | FR-0704 | Find and Replace rename mode. | A | Must |
@@ -343,6 +343,7 @@ Ferry integrates the useful behavior of NautilusRenamer v1.1 rather than launchi
 | FR-0725 | Folders as well as files shall be valid bulk-rename targets. | A+B | Must |
 | FR-0726 | User-entered letter case shall be preserved as entered; Ferry shall not normalize it. | A | Must |
 | FR-0727 | Bulk rename execution shall be collision-safe, including swaps/cycles, using a two-phase temporary-name strategy or equivalent safe mechanism. | A | Must |
+| FR-0728 | **New Folder** shall create the item in the stable bottom tail, scroll it into view, select it, and immediately enter the same inline-rename interaction used by ordinary single-item rename. | A | Must |
 
 **Note:** Standalone NautilusRenamer v1.1 used natural filename order for deterministic numbering when launched externally. Inside Ferry, FR-0723 supersedes that behavior because Ferry has an explicit visible sort order.
 
@@ -449,6 +450,7 @@ Ferry integrates the useful behavior of NautilusRenamer v1.1 rather than launchi
 - In Contains mode, `2026 manga` means both terms must occur somewhere in the name.
 - In Starts-with mode, the entered search string is treated as a prefix of the filename/folder name.
 - Wildcards such as `*.jpg`, `Manga*.jpg`, `report_??.pdf` use wildcard matching.
+- Ordinary text matching shall ignore full-width/half-width character differences (for example `カタカナ` ↔ `ｶﾀｶﾅ`, `ABC` ↔ `ＡＢＣ`) while preserving kana-type distinctions such as hiragana versus katakana.
 
 ---
 
@@ -528,6 +530,7 @@ For files, `Items` is unavailable (`—`) and `Size` contains the file size.
 | FR-1029 | **Compress to ZIP** shall be available for one or more selected files/folders. The archive shall be created in the current Ferry folder with a collision-safe name. | A+B | Must |
 | FR-1030 | For a single `.zip` selection, Ferry shall provide **Extract Here** and **Extract to `<archive-name>\`**. Extraction shall run without blocking the Ferry UI. | A+B | Must |
 | FR-1031 | `F12` shall invoke **Open Terminal Here** for the current Ferry folder regardless of item selection. The shortcut is not applicable to the virtual Recycle Bin view. | A | Must |
+| FR-1032 | While ZIP compression or extraction is running, Ferry shall show a window-level neutral-gray indeterminate progress indicator in the bottom status area. The indicator shall remain visible across folder/tab navigation until all active archive operations finish. After the final operation completes successfully, Ferry shall show a completion message for approximately 3 seconds before returning to the normal status display. | A+B | Should |
 
 ### External terminal details
 
@@ -560,7 +563,7 @@ For files, `Items` is unavailable (`—`) and `Size` contains the file size.
 | FR-1113 | Window size shall be persisted. | A | Must |
 | FR-1114 | Window position should be persisted safely with multi-monitor fallback. | A | Should |
 | FR-1115 | Maximized state should be persisted. | A | Should |
-| FR-1116 | Sidebar width should be persisted. | A | Should |
+| FR-1116 | Sidebar width shall be configurable in the range **50–480** and persisted. The resize hit target may remain wider than the visual separator for usability. | A | Should |
 | FR-1117 | Sidebar visibility should be persisted. | A | Should |
 | FR-1118 | Grid icon size should be persisted. | A | Should |
 | FR-1119 | External terminal command shall be configurable. | A | Should |
@@ -574,6 +577,7 @@ For files, `Items` is unavailable (`—`) and `Size` contains the file size.
 | FR-1127 | Multiple settings profiles are out of scope. | C | — |
 | FR-1128 | Ferry v1.0 UI language shall be **English only**. | A | Must |
 | FR-1129 | A localization/i18n subsystem is out of scope for v1.0. | C | — |
+| FR-1130 | Settings shall expose an **About Ferry** section showing the assembly-derived application version, creator credit (`kazu0m1`), GitHub repository, and MIT license information. | A | Should |
 
 Suggested exported settings filename: `FerrySettings.json`.
 
@@ -830,6 +834,10 @@ The RC1–RC10 custom Explorer-style selection engine is not part of public v1.0
 | **1.0.16** | RC13 changes the factory default of **Sort folders before files** to ON and rebuilds multi-selection Windows detailed-context-menu PIDL construction around one parent `IShellFolder`, while retaining the RC11/RC12 native selection baseline. |
 | **1.0.17** | RC14 separates ordinary background reconciliation from explicit user sorting: newly detected items remain in a stable bottom tail, same-path metadata updates do not automatically re-sort the view, and F5/Refresh/column/settings actions explicitly reapply the configured sort. |
 | **1.0.18** | RC15 adds `F12` as a window-level Open Terminal Here shortcut for the current Ferry folder, independent of item selection, while leaving the RC14 interaction baseline unchanged. |
+| **1.0.19** | v1.0.1 release-candidate UX refinement: inline single-item rename and New Folder focus/rename flow; full-/half-width-insensitive filename search; stable Pinned D&D reordering; lightweight List Shell icons with Grid-only thumbnails; Sidebar width range 50–480 with a thinner visual separator; and Settings About/version/creator information. |
+| **1.0.20** | v1.0.1 RC2 visual polish: removes the dedicated splitter layout gap so Sidebar and file-view frame share the same boundary while retaining a transparent 5-DIP resize hit target, and increases spacing before the Settings About section. |
+| **1.0.21** | v1.0.1 RC3 archive-operation feedback: adds a persistent window-level indeterminate progress bar for ZIP compression and extraction while continuing to delegate archive work to the Windows-provided archive tool. |
+| **1.0.22** | v1.0.1 RC4 archive-operation polish: changes the indeterminate archive progress indicator to a neutral gray treatment and shows a short completion message after successful compression or extraction. |
 
 Release notes remain the authoritative chronological record of what changed in each application build. This specification remains the authoritative description of the **current intended v1.0 behavior**.
 
@@ -837,7 +845,7 @@ Release notes remain the authoritative chronological record of what changed in e
 
 # 10. Requirements baseline status
 
-The F01–F12 requirements review is complete and the baseline has been updated through Ferry public-release specification revision 1.0.18.
+The F01–F12 requirements review is complete and the baseline has been updated through Ferry v1.0.1 release-candidate specification revision 1.0.22.
 
 Implementation may refine technical mechanisms, but any change that alters user-visible behavior, Must/Should scope, the Windows-delegation boundary, or Ferry's resource philosophy shall be treated as a specification change and reflected in this document.
 

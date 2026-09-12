@@ -1,5 +1,49 @@
 ﻿# Ferry Changelog
 
+## v1.0.1 — 2026-09-12
+
+Ferry v1.0.1 focuses on small daily-workflow improvements and lighter List-view behavior.
+
+### Rename / creation
+
+- Single-item `F2` / Rename now edits the item name inline instead of opening a separate rename window.
+- Files initially select only the filename stem while leaving the extension visible and editable.
+- **New Folder** creates the folder in the stable bottom tail, scrolls it into view, selects it, and immediately enters inline rename.
+
+### Search
+
+- Filename search now ignores full-width / half-width differences while preserving kana-type distinctions.
+- Examples: `カタカナ` matches `ｶﾀｶﾅ`, `ガ` matches `ｶﾞ`, and `ABC` matches `ＡＢＣ`.
+
+### Sidebar
+
+- Pinned folders can be reordered by drag and drop and retain their order after restart.
+- The Pinned section now uses a dedicated ordered list model for stable reordering.
+- Sidebar width is configurable from **50–480** and remains persisted.
+- Sidebar and file view now meet at one visual boundary with no dedicated splitter gap; the transparent resize hit target remains easy to grab.
+
+### List / Grid
+
+- List view uses lightweight Windows Shell type icons rather than content thumbnails.
+- Grid view continues to load thumbnails when visual previews are useful.
+- List icon/type queries avoid unnecessary access to file content/thumbnail providers.
+
+### Settings / About
+
+- Settings now includes a visually separated **About Ferry** section showing the assembly-derived version, `Created by kazu0m1`, the GitHub repository, and MIT license information.
+
+### Archive feedback
+
+- ZIP compression and extraction now show a persistent neutral-gray indeterminate progress indicator in the bottom status bar.
+- The archive progress indicator remains visible across folder/tab navigation until the operation finishes.
+- Successful completion briefly shows `ZIP compression complete.` / `ZIP extraction complete.` before returning to the normal status.
+- Archive work continues to use the Windows-provided archive tool rather than a Ferry-owned codec.
+
+### Compatibility
+
+- Existing v1.0.0 selection behavior, multi-item Enter/D&D, F12 terminal shortcut, external-update stable-tail behavior, and Windows detailed context menu are retained.
+- **Open with…** behavior is unchanged in v1.0.1.
+
 ## v1.0.0 — First public release
 
 Ferry v1.0.0 is the first public release of the lightweight Windows 11 file manager inspired by the simplicity and workflow of GNOME Files (Nautilus).

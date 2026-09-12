@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在の正式版:** v1.0.0  
+> **現在の正式版:** v1.0.1  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.0.0 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.0-win-portable.zip)**
+**[Ferry v1.0.1 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.1-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -48,7 +48,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上の**ダウンロード**リンクから`Ferry-v1.0.0-win-portable.zip`をダウンロードします。
+1. 上の**ダウンロード**リンクから`Ferry-v1.0.1-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -63,7 +63,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## 公開版v1.0.0の初期設定
+## 公開版v1.0.1の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -86,10 +86,12 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 ### ファイル表示・ナビゲーション
 
 - Home / 標準ユーザーフォルダー / ピン留め / ドライブ / ごみ箱のSidebar
+- PinnedはD&Dで並べ替え可能。順序は再起動後も保持
+- Sidebar幅は50～480で設定可能
 - Breadcrumb
 - Back / Forward / Up / Home
 - Tabs
-- List / Grid
+- List / Grid（Listは軽量なWindows Shell種別アイコン、Gridは内容サムネイル）
 - Natural Sort
 - Sort folders before files（既定ON）
 - 昇順/降順インジケーター
@@ -108,6 +110,7 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 - ファイル名・フォルダー名を対象
 - 非同期・逐次表示
 - Contains / StartsWith
+- 全角/半角の違いを無視して検索（`カタカナ`で`ｶﾀｶﾅ`もHIT。ひらがな/カタカナは区別）
 - `*` / `?` ワイルドカード
 - Windows Search Indexを利用できる場合は利用し、不足分は直接走査
 - Ferry独自の検索DBは作成しない
@@ -152,7 +155,7 @@ Windows管理のごみ箱をFerry内の仮想ビューとして表示します�
 - Extract Here
 - Extract to `<archive-name>\`
 
-Ferry独自の圧縮コーデックは持たず、Windows 11のアーカイブ機能へ委譲します。
+Ferry独自の圧縮コーデックは持たず、Windows 11のアーカイブ機能へ委譲します。圧縮/展開中は下部ステータスにグレーの往復型ProgressBarを表示し、別フォルダーへ移動しても処理完了まで維持します。正常終了時は完了メッセージを約3秒表示します。
 
 ## Open with FerryをExplorerへ追加
 
@@ -212,7 +215,7 @@ Ferryには次のものがありません。
 - 独自検索DB
 - 独自クラウド同期
 
-Windowsが既に優れた機能を持つ領域は、Ferryで再実装せずWindowsへ委譲することを基本方針としています。
+Windowsが既に優れた機能を持つ領域は、Ferryで再実装せずWindowsへ委譲することを基本方針としています。Settingsには実行中のVersion、`Created by kazu0m1`、GitHub、MIT Licenseを確認できる**About Ferry**もあります。
 
 ## GNOME / Nautilusとの関係
 
@@ -235,7 +238,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.0.0-win-portable.zip
+dist\Ferry-v1.0.1-win-portable.zip
 ```
 
 です。

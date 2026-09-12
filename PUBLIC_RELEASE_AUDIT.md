@@ -1,39 +1,33 @@
-﻿# Ferry Public v1.0.0 — Release Audit
+﻿# Ferry Public v1.0.1 — Release Audit
 
-**Audit date:** 2026-09-08  
+**Audit date:** 2026-09-12  
 **Release status:** READY FOR PUBLICATION after final Windows binary build/package verification
 
-This document summarizes the public-release audit and the Windows validation completed for Ferry v1.0.0. It is not a legal opinion.
+This document summarizes the v1.0.1 release audit and the Windows validation completed during the prototype/RC cycle. It is not a legal opinion.
 
-## 1. Personal-environment dependency audit
+## 1. Release scope
 
-| Item | Public v1.0.0 state | Status |
-|---|---|---|
-| Default Home | `%USERPROFILE%` | PASS |
-| Terminal command | Blank = Auto | PASS |
-| Terminal fallback | Windows Terminal → Windows PowerShell → Command Prompt | PASS |
-| Custom terminal | Configurable command/arguments | PASS |
-| User-specific paths/names | No private machine-specific path retained in public defaults | PASS |
-| Settings | Portable JSON; fresh package contains no user settings | PASS |
+Ferry v1.0.1 is a maintenance/usability release. The principal changes are:
+
+- single-item inline rename and improved New Folder flow
+- full-width / half-width-insensitive filename search
+- drag-and-drop reordering for Pinned Sidebar folders
+- lightweight List-view Shell type icons; Grid thumbnails remain available
+- Sidebar width range 50–480 and tighter Sidebar/File-view boundary
+- About Ferry version/author/repository/license information
+- persistent ZIP compression/extraction activity feedback with brief completion messages
+
+`Open with…` default-app behavior is unchanged. Ferry still delegates archive work to Windows rather than owning an archive codec.
 
 ## 2. Dependency / source-origin audit
 
 - Project uses Windows/.NET Framework assemblies and WPF.
-- No NuGet package references are present in `Ferry.csproj` or `Build.cmd`.
+- No NuGet package references are required by the build path.
 - No GNOME/Nautilus source code or GNOME artwork is bundled.
 - Nautilus is used as a UX reference only.
-- ZIP operations are delegated to the Windows 11 archive tool.
+- ZIP operations remain delegated to the Windows-provided archive tool.
 
-**Result:** no third-party package/library blocker was identified in the supplied Ferry source tree.
-
-## 3. Branding / attribution audit
-
-- Product name is **Ferry**.
-- README states that Ferry is an independent Windows implementation, not a port/fork of Nautilus.
-- README includes a GNOME non-affiliation statement.
-- MIT License copyright holder is `kazu0m1`.
-
-## 4. Privacy / data behavior audit
+## 3. Privacy / data behavior
 
 - Telemetry: none.
 - Automatic crash upload: none.
@@ -41,46 +35,36 @@ This document summarizes the public-release audit and the Windows validation com
 - Settings: local JSON in Ferry's portable folder.
 - No account system, cloud-sync subsystem, Ferry-owned search database, service, or tray process.
 
-## 5. Selection / interaction release decision
+## 4. Windows validation status
 
-The RC1–RC10 custom Explorer-style Selection Engine was removed before release because Windows testing found regressions not present in the internally proven native selection baseline.
+The v1.0.1 prototype/RC cycle verified the new functionality on Windows, including:
 
-Public v1.0 therefore uses native WPF `SelectionMode.Extended` behavior:
+- Inline Rename / New Folder auto-scroll + inline rename: PASS
+- Full-width / half-width filename search: PASS
+- Pinned D&D reorder + persistent order: PASS
+- Sidebar width down to 50: PASS
+- Stable List type-icon display and Grid thumbnails: PASS
+- Multi-PDF `Enter` open after List-icon optimization: PASS
+- Sidebar/File-view boundary polish: PASS
+- About Ferry display/version: PASS
+- ZIP indeterminate progress across navigation: PASS
+- Neutral-gray archive progress style: PASS
+- ZIP completion message (~3 seconds): PASS
 
-- normal click
-- `Ctrl+Click`
-- `Shift+Click`
-- `Ctrl+A`
-- empty-space deselect
-- multi-selection Enter
-- multi-selection-preserving D&D
+Existing v1.0.0 selection, multi-item Enter/D&D, F12, detailed Shell menu, external-update stable-tail behavior, and settings recovery remain retained.
 
-Rubber-band/marquee selection is out of scope for v1.0.
+## 5. Final packaging gate
 
-## 6. Final Windows validation
+The validated RC4 application logic is promoted to v1.0.1 final with **release/version metadata and public-documentation changes only**.
 
-The final RC15 code baseline passed the **19 / 19 public-release smoke test** on Windows.
-
-Additional targeted validations completed during the RC cycle include:
-
-- Multiple-selection Windows detailed Shell menu: PASS through both `Shift+Right-click` and Ferry → Show more options.
-- Corrupted `settings.json`: PASS; Ferry starts with defaults and writes valid JSON again.
-- Missing `settings.json`: PASS; Ferry starts and creates a new file after Settings → Save.
-- Active `.crdownload`: PASS; metadata updates in place, new item remains at the bottom, clicks no longer intermittently miss, and `F5` reapplies sort.
-- `F12` current-folder Open Terminal Here: PASS.
-
-## 7. Final packaging gate
-
-The source/package metadata has been promoted from `1.0.0-rc15` to `1.0.0` without changing the validated application logic.
-
-Before creating the GitHub Release on Windows:
+Before publishing on GitHub from Windows:
 
 1. Run `Build.cmd`.
-2. Launch the resulting `Portable\Ferry.exe` once and confirm it opens.
+2. Launch `Portable\Ferry.exe` and confirm Settings → About Ferry shows `Version 1.0.1`.
 3. Run `Make-PortableRelease.cmd`.
-4. Confirm `dist\Ferry-v1.0.0-win-portable.zip` exists.
-5. Extract that ZIP into a new folder and launch `Ferry.exe` once.
-6. Record the SHA-256 printed by `Make-PortableRelease.cmd`.
-7. Create GitHub tag/release `v1.0.0` and upload the portable ZIP.
+4. Confirm `dist\Ferry-v1.0.1-win-portable.zip` exists.
+5. Extract the ZIP into a fresh folder and launch `Ferry.exe`.
+6. Perform the short final checks in `FINAL_RELEASE_CHECKLIST_JA.md`.
+7. Commit/push the final source, create tag/release `v1.0.1`, and upload the portable ZIP.
 
-**Release decision:** READY, subject only to the final binary packaging/launch verification above.
+**Release decision:** READY, subject only to final Windows build/package/launch verification.

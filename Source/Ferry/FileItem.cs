@@ -10,7 +10,10 @@ namespace Ferry
         private string itemCountText;
         private int? itemCount;
         private ImageSource icon;
+        private ImageSource listIcon;
         private string typeName;
+        private bool isRenaming;
+        private string renameText;
 
         public string FullPath { get; set; }
         public string Name { get; set; }
@@ -41,10 +44,52 @@ namespace Ferry
             set { itemCountText = value; OnPropertyChanged("ItemCountText"); }
         }
 
+        // Grid view thumbnail. List view deliberately uses ListIcon so opening a
+        // large folder never invokes thumbnail providers just to draw tiny rows.
         public ImageSource Icon
         {
             get { return icon; }
             set { icon = value; OnPropertyChanged("Icon"); }
+        }
+
+        public ImageSource ListIcon
+        {
+            get { return listIcon; }
+            set { listIcon = value; OnPropertyChanged("ListIcon"); }
+        }
+
+        public bool IsRenaming
+        {
+            get { return isRenaming; }
+            set { if (isRenaming == value) return; isRenaming = value; OnPropertyChanged("IsRenaming"); }
+        }
+
+        public string RenameText
+        {
+            get { return renameText ?? Name ?? string.Empty; }
+            set { if (string.Equals(renameText, value, StringComparison.Ordinal)) return; renameText = value; OnPropertyChanged("RenameText"); }
+        }
+
+        public void BeginRename()
+        {
+            RenameText = Name ?? string.Empty;
+            IsRenaming = true;
+        }
+
+        public void CancelRename()
+        {
+            RenameText = Name ?? string.Empty;
+            IsRenaming = false;
+        }
+
+        public void ApplyRenameResult(string newPath)
+        {
+            FullPath = newPath;
+            Name = Path.GetFileName((newPath ?? string.Empty).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            RenameText = Name ?? string.Empty;
+            IsRenaming = false;
+            OnPropertyChanged("FullPath");
+            OnPropertyChanged("Name");
         }
 
         public string SizeText

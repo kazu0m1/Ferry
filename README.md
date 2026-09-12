@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.0.0  
+> **Current release:** v1.0.1  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.0.0 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.0-win-portable.zip)**
+**[Download Ferry v1.0.1 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.1-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -54,7 +54,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.0.0-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.0.1-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -93,10 +93,12 @@ A custom terminal command and arguments can be set in **Settings**.
 ### Navigation and views
 
 - Sidebar with Home, standard user folders, pinned folders, drives, and Recycle Bin
+- Pinned folders can be reordered by drag & drop; the order persists across restarts
+- Sidebar width is configurable from 50–480
 - Breadcrumb navigation
 - Back / Forward / Up / Home
 - Tabs (`Ctrl+T`, `Ctrl+W`, `Ctrl+Tab`, `Ctrl+Shift+Tab`)
-- List and Grid views
+- List and Grid views — List uses lightweight Windows Shell type icons; Grid loads content thumbnails
 - Global List columns and sort configuration
 - Natural filename sorting (`file2` before `file10`)
 - **Sort folders before files** enabled by default
@@ -116,6 +118,7 @@ Ferry search is intentionally a **file-browser filename search**, not an Everyth
 - files and folders
 - progressive asynchronous results
 - **Contains** and **StartsWith** modes
+- full-width / half-width differences are ignored (`カタカナ` matches `ｶﾀｶﾅ`; kana type remains distinct)
 - `*` and `?` wildcards
 - multiple terms use AND behavior in Contains mode
 - hidden items included only when **Show hidden items** is enabled
@@ -180,7 +183,7 @@ The lightweight context menu provides:
 - **Extract Here** for a selected ZIP
 - **Extract to `<archive-name>\`**
 
-Archive work is asynchronous and delegated to the Windows 11 archive tool. Ferry contains no custom archive codec.
+Archive work is asynchronous and delegated to the Windows 11 archive tool. While compression/extraction is active, Ferry keeps a neutral indeterminate progress indicator visible in the bottom status bar even if you navigate elsewhere. On success, a completion message is shown briefly. Ferry contains no custom archive codec.
 
 ## Open with Ferry in Explorer
 
@@ -242,7 +245,7 @@ Ferry has:
 - no Ferry-specific search database
 - no always-running service or tray process
 
-Debug logging is **Off** by default and bounded when enabled.
+Debug logging is **Off** by default and bounded when enabled. Settings also includes an **About Ferry** section with the running version, project/author information, GitHub repository, and MIT license notice.
 
 ## Build
 
@@ -265,7 +268,7 @@ Make-PortableRelease.cmd
 This creates:
 
 ```text
-dist\Ferry-v1.0.0-win-portable.zip
+dist\Ferry-v1.0.1-win-portable.zip
 ```
 
 ## Repository layout
@@ -280,7 +283,7 @@ Ferry/
 ├─ Make-PortableRelease.cmd      binary release ZIP builder
 ├─ Ferry_SPEC_v1.0.md            functional specification
 ├─ TEST_CHECKLIST.md             regression checklist
-├─ RELEASE_NOTES_v1.0.0.md       GitHub Release notes
+├─ RELEASE_NOTES_v1.0.1.md       Current GitHub Release notes
 ├─ CHANGELOG.md
 ├─ LICENSE.txt
 ├─ README.md

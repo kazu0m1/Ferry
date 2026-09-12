@@ -1,75 +1,45 @@
-﻿# Ferry v1.0.0 Final Static Validation
+﻿# Ferry v1.0.1 Final Static Validation
 
-**Date:** 2026-09-08  
-**Baseline:** Ferry v1.0.0-rc15, Windows final smoke test 19/19 PASS
+**Baseline:** Ferry v1.0.1-rc4, accepted on Windows for release
+**Finalization rule:** application logic must not change during promotion to v1.0.1 final.
 
-## Release-promotion rule
+## Application source comparison
 
-The validated RC15 application logic must not change during promotion to v1.0.0 final.
+Files under `Source/Ferry` that differ from RC4:
 
-## Source comparison
+- `AssemblyInfo.cs`
 
-- `Source/Ferry` compared with RC15: byte-identical for every source/project/manifest file except `AssemblyInfo.cs`.
-- `AssemblyInfo.cs` change: `AssemblyInformationalVersion("1.0.0-rc15")` → `AssemblyInformationalVersion("1.0.0")` only.
-- AssemblyVersion and AssemblyFileVersion remain `1.0.0.0`.
+Expected result: only `AssemblyInfo.cs`, changing `AssemblyInformationalVersion` from `1.0.1-rc4` to `1.0.1`.
 
-**Result:** PASS — no application-logic change introduced during final promotion.
+Result: **PASS**
 
 ## Release metadata
 
-- Assembly informational version: `1.0.0`
-- `Make-PortableRelease.cmd` version: `1.0.0`
-- Portable README: `Ferry v1.0.0 Portable`
-- README / README.ja: final `v1.0.0` release wording
-- Specification header: revision `1.0.18`
-
-**Result:** PASS.
+- [x] AssemblyVersion = `1.0.1.0`
+- [x] AssemblyFileVersion = `1.0.1.0`
+- [x] AssemblyInformationalVersion = `1.0.1`
+- [x] Portable README = `Ferry v1.0.1 Portable`
+- [x] `Make-PortableRelease.cmd` version = `1.0.1`
+- [x] Expected portable asset = `Ferry-v1.0.1-win-portable.zip`
+- [x] Specification revision = `1.0.23`
+- [x] README / README.ja current-release and direct-download text = v1.0.1
+- [x] `RELEASE_NOTES_v1.0.1.md` present
+- [x] public screenshot `docs/screenshot-main.png` present
 
 ## Package hygiene
 
-Static scan of the final source tree found no:
+- [x] v1.0.1 prototype/RC temporary root documents removed
+- [x] no EXE/PDB files included in source tree
+- [x] no user `settings.json` included
+- [x] no Ferry debug log included
+- [x] ZIP integrity check required after packaging
 
-- `settings.json`
-- Ferry log file
-- `Ferry.exe`
-- `.pdb`
-- user-specific runtime configuration
+## Windows-only final gate
 
-Historical RC quick-check/static-validation files were removed from the public root package. The Explorer-selection research document is retained under `docs/` as development research, while the public README/spec clearly state that rubber-band selection is not included in v1.0.
+This environment cannot run the Windows .NET Framework/WPF build toolchain. On Windows:
 
-**Result:** PASS.
-
-## Public documentation
-
-Updated for final v1.0.0:
-
-- `README.md`
-- `README.ja.md`
-- `CHANGELOG.md`
-- `RELEASE_NOTES_v1.0.0.md`
-- `PUBLIC_RELEASE_AUDIT.md`
-- `TEST_CHECKLIST.md`
-- `FINAL_RELEASE_CHECKLIST_JA.md`
-- `docs/GITHUB_PUBLICATION_GUIDE_JA.md`
-- `docs/UBUNTU_JP_ANNOUNCEMENT_DRAFT.md`
-- `docs/FINAL_SMOKE_TEST_RESULT_JA.md`
-
-The old community-announcement claim that v1.0 includes rubber-band selection was removed.
-
-**Result:** PASS.
-
-## Environment limitation / final binary gate
-
-This Linux environment does not contain the Windows .NET Framework/WPF compiler used by `Build.cmd`, so the final binary cannot be truthfully built or runtime-tested here.
-
-Required Windows packaging steps:
-
-1. `Build.cmd`
-2. launch `Portable\Ferry.exe` once
-3. `Make-PortableRelease.cmd`
-4. extract `dist\Ferry-v1.0.0-win-portable.zip` into a fresh directory
-5. launch `Ferry.exe` once
-6. record the SHA-256 printed by the packaging script
-
-**Source release readiness:** PASS.  
-**Binary release readiness:** pending only the Windows build/package/launch gate above.
+1. Run `Build.cmd`.
+2. Confirm Settings → About Ferry = `Version 1.0.1`.
+3. Run `Make-PortableRelease.cmd`.
+4. Extract `dist\Ferry-v1.0.1-win-portable.zip` into a fresh folder and launch it.
+5. Complete the short checks in `FINAL_RELEASE_CHECKLIST_JA.md`.

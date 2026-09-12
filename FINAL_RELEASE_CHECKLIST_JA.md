@@ -1,61 +1,44 @@
-﻿# Ferry v1.0.0 正式公開チェックリスト
+﻿# Ferry v1.0.1 正式リリースチェックリスト
 
-RC15のWindows最終スモークテストは19/19 PASS済みです。ここでは**正式版Binaryを作ってGitHubへ載せるための最終作業だけ**を行います。
+RC4の実機確認済みロジックを、機能変更なしでv1.0.1へ昇格する。
 
-## A. Source確認
+## A. Source / metadata
 
-- [ ] `Source\Ferry\AssemblyInfo.cs` の InformationalVersion が `1.0.0`
-- [ ] `Make-PortableRelease.cmd` の VERSION が `1.0.0`
-- [ ] READMEが `v1.0.0` 正式版表記
-- [ ] Source treeに個人用`settings.json`や`Ferry.log`がない
+- [ ] `AssemblyInformationalVersion` が `1.0.1`
+- [ ] Settings → About Ferry が `Version 1.0.1` を表示
+- [ ] `Portable/README.txt` が `Ferry v1.0.1 Portable`
+- [ ] `Make-PortableRelease.cmd` が `VERSION=1.0.1`
+- [ ] README / README.ja のCurrent releaseとDownloadリンクがv1.0.1
+- [ ] `RELEASE_NOTES_v1.0.1.md`を確認
 
 ## B. Windows build
 
-Repository rootで:
+1. `Build.cmd` を実行
+2. `Portable\Ferry.exe` を起動
+3. 最小確認:
+   - [ ] Home / Navigation
+   - [ ] Inline Rename / New Folder
+   - [ ] Pinned D&D reorder
+   - [ ] List icon / Grid thumbnail
+   - [ ] 全角/半角検索
+   - [ ] F12 Open Terminal Here
+   - [ ] ZIP圧縮/展開ProgressBarと3秒完了表示
+   - [ ] Settings → About Ferry = Version 1.0.1
 
-```text
-Build.cmd
-```
+## C. Portable ZIP
 
-- [ ] `Portable\Ferry.exe`が生成される
-- [ ] `Ferry.exe`を1回起動できる
-- [ ] Homeが表示される
+- [ ] `Make-PortableRelease.cmd` を実行
+- [ ] `dist\Ferry-v1.0.1-win-portable.zip` が生成
+- [ ] ZIPを別フォルダーへ展開して`Ferry.exe`を起動
+- [ ] `config`がローカルに生成/保存される
 
-## C. Portable Release asset生成
+## D. GitHub
 
-```text
-Make-PortableRelease.cmd
-```
-
-- [ ] `dist\Ferry-v1.0.0-win-portable.zip`が生成される
-- [ ] コマンドが表示したSHA-256を控える
-
-## D. Binary ZIP最終確認
-
-ZIPを新しい空フォルダーへ展開して:
-
-- [ ] `Ferry.exe`が起動する
-- [ ] Homeが開く
-- [ ] F12で現在フォルダーにTerminalが開く
-- [ ] Settingsが開く
-- [ ] ZIP内に個人用`config\settings.json`が入っていない
-
-## E. GitHub
-
-- [ ] Repository `kazu0m1/Ferry` をPublicで作成 / push
-- [ ] Tag `v1.0.0`
-- [ ] Release title `Ferry v1.0.0`
-- [ ] Release本文に`RELEASE_NOTES_v1.0.0.md`を使用
-- [ ] `Ferry-v1.0.0-win-portable.zip`を添付
-- [ ] Release本文末尾へSHA-256を追記
-- [ ] Pre-releaseをOFF
-
-## F. 公開直後
-
-- [ ] READMEが正常表示
-- [ ] 日本語READMEリンクが正常
-- [ ] Release assetをダウンロード可能
-- [ ] ダウンロードしたZIPを新規フォルダーで起動可能
-- [ ] Issuesが利用可能
-
-ここまで完了したらFerry v1.0.0正式公開完了です。
+- [ ] 正式版Source内容をGit管理フォルダーへ反映
+- [ ] prototype/RC一時文書を公開ルートから削除
+- [ ] Commit / Push
+- [ ] Tag: `v1.0.1`
+- [ ] Release title: `Ferry v1.0.1`
+- [ ] Release本文: `RELEASE_NOTES_v1.0.1.md`
+- [ ] Asset: `Ferry-v1.0.1-win-portable.zip`
+- [ ] READMEの直接DownloadリンクからAssetを取得できることを確認

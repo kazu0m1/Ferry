@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.OleDb;
 using System.IO;
+using System.Globalization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,8 @@ namespace Ferry
 
     internal static class SearchService
     {
+        private static readonly CompareInfo JapaneseCompare = CultureInfo.GetCultureInfo("ja-JP").CompareInfo;
+        private const CompareOptions NameCompareOptions = CompareOptions.IgnoreCase | CompareOptions.IgnoreWidth;
         public static Task SearchAsync(SearchRequest request, Action<string> onPathFound, CancellationToken token)
         {
             return Task.Run(delegate
@@ -140,16 +143,20 @@ namespace Ferry
             if (query.Length == 0) return true;
             if (ContainsWildcard(query)) return WildcardMatch(name, query);
             if (string.Equals(mode, "StartsWith", StringComparison.OrdinalIgnoreCase))
-                return name.StartsWith(query, StringComparison.OrdinalIgnoreCase);
+                return JapaneseCompare.IsPrefix(name, query, NameCompareOptions);
 
-            string[] terms = query.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] terms = query.Split(new char[] { ' ', '\t', '\u3000' }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < terms.Length; i++)
-                if (name.IndexOf(terms[i], StringComparison.OrdinalIgnoreCase) < 0) return false;
+                if (JapaneseCompare.IndexOf(name, terms[i], NameCompareOptions) < 0) return false;
             return true;
         }
 
         private static bool WildcardMatch(string text, string pattern)
         {
+            // Normalize compatibility-width forms first so patterns such as ガ* also match
+            // half-width names such as ｶﾞ..., while still keeping hiragana and katakana distinct.
+            text = NormalizeWidth(text);
+            pattern = NormalizeWidth(pattern);
             int t = 0, p = 0, star = -1, match = 0;
             while (t < text.Length)
             {
@@ -160,6 +167,11 @@ namespace Ferry
             }
             while (p < pattern.Length && pattern[p] == '*') p++;
             return p == pattern.Length;
+        }
+
+        private static string NormalizeWidth(string value)
+        {
+            return (value ?? string.Empty).Normalize(NormalizationForm.FormKC);
         }
 
         private static bool ContainsWildcard(string value)
