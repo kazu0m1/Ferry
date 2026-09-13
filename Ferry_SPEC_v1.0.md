@@ -2,9 +2,9 @@
 
 **Project:** Ferry  
 **Target OS:** Windows 11  
-**Specification revision:** 1.0.23  
-**Implementation baseline:** Ferry v1.0.1  
-**Document status:** Ferry v1.0.1 release baseline; living v1.0 requirements document  
+**Specification revision:** 1.0.24  
+**Implementation baseline:** Ferry v1.0.2  
+**Document status:** Ferry v1.0.2 release baseline; living v1.0 requirements document  
 **UI language:** English only (v1.0)  
 **Primary distribution:** Portable  
 **Implementation direction:** Windows-native file browser using Windows Shell / OS capabilities wherever practical; current implementation assumption is C# + WPF with Windows Shell APIs.
@@ -522,15 +522,26 @@ For files, `Items` is unavailable (`—`) and `Size` contains the file size.
 | FR-1021 | Windows file-system/Shell notifications shall drive automatic refresh where practical. | B | Must |
 | FR-1022 | Windows **Send to** remains available via detailed context menu. | B | Should |
 | FR-1023 | Windows Share UI integration is out of scope. | C | — |
-| FR-1024 | ZIP compression/extraction shall be available from Ferry's lightweight context menu and delegated to a Windows-provided archive facility rather than a Ferry archive codec. | A+B | Must |
+| FR-1024 | ZIP compression/extraction shall be available from Ferry's lightweight context menu. Ferry shall own ZIP workflow/control while using .NET `System.IO.Compression` for ZIP container/compression support; ZIP work shall not depend on an external Windows archive command-line tool. | A | Must |
 | FR-1025 | **Copy Path** shall be available. | A | Must |
 | FR-1026 | **Open Terminal Here** shall launch the auto-selected or configured external terminal with the current folder as working directory. | A | Should |
 | FR-1027 | **Open in Explorer** shall open the current/selected location in Windows Explorer. | A+B | Must |
 | FR-1028 | Double-clicking a Windows `.lnk` whose resolved target is a folder shall navigate the **current Ferry tab** to that target instead of opening a new Explorer window. | A+B | Must |
-| FR-1029 | **Compress to ZIP** shall be available for one or more selected files/folders. The archive shall be created in the current Ferry folder with a collision-safe name. | A+B | Must |
-| FR-1030 | For a single `.zip` selection, Ferry shall provide **Extract Here** and **Extract to `<archive-name>\`**. Extraction shall run without blocking the Ferry UI. | A+B | Must |
+| FR-1029 | **Compress to ZIP** shall be available for one or more selected files/folders. Ferry shall show a setup window with the selected source set and a changeable destination ZIP path before Start. | A | Must |
+| FR-1030 | For a single `.zip` selection, Ferry shall provide **Extract Here** and **Extract to `<archive-name>\`**. Ferry shall show the source ZIP and changeable destination folder before Start. After Start, the setup window shall close and extraction shall run without blocking normal Ferry browsing. | A | Must |
 | FR-1031 | `F12` shall invoke **Open Terminal Here** for the current Ferry folder regardless of item selection. The shortcut is not applicable to the virtual Recycle Bin view. | A | Must |
-| FR-1032 | While ZIP compression or extraction is running, Ferry shall show a window-level neutral-gray indeterminate progress indicator in the bottom status area. The indicator shall remain visible across folder/tab navigation until all active archive operations finish. After the final operation completes successfully, Ferry shall show a completion message for approximately 3 seconds before returning to the normal status display. | A+B | Should |
+| FR-1032 | While ZIP compression or extraction is running, Ferry shall show one neutral-gray **overall determinate** progress bar in the bottom status area, plus processed/total data, file count, speed, ETA when available, and Cancel. Per-item progress bars are intentionally omitted. Archive progress shall remain visible across folder/tab navigation. | A | Must |
+| FR-1033 | Normal Ferry navigation, tabs, search, and file browsing shall remain usable while ZIP work is active. One archive operation may run per Ferry window at a time. | A | Must |
+| FR-1034 | ZIP creation progress shall use source/input bytes as the primary work measure. ZIP extraction progress shall use expanded bytes from ZIP entry metadata as the primary work measure. | A | Must |
+| FR-1035 | Extraction shall pre-scan archive metadata and warn the user when the current resource thresholds are exceeded: expanded data over 20 GiB, more than 50,000 files, or compression ratio over 100×. The warning shall report measured values and offer explicit **YES** to continue or **NO** to cancel. | A | Must |
+| FR-1036 | Unsafe extraction paths/names shall be blocked rather than offered as a user-overridable warning. This includes destination escape/path traversal, absolute/rooted archive paths, Windows alternate-data-stream style names, and reserved Windows device-name forms. | A | Must |
+| FR-1037 | Extraction shall not write an incomplete file directly under its final name. File content shall be completed through a temporary file and finalized only after the entry copy succeeds. Cancellation/failure cleanup shall remove unfinished temporary output. | A | Must |
+| FR-1038 | Folder conflicts shall offer **MERGE / KEEP BOTH / SKIP / CANCEL** when applicable. File conflicts shall offer **REPLACE / KEEP BOTH / SKIP / CANCEL** when applicable. Destructive Merge/Replace shall not be offered for incompatible item types or unsafe reparse-point cases. | A | Must |
+| FR-1039 | **KEEP BOTH** shall create a collision-safe sibling name by appending `(n)` without an added space before the suffix: `Folder(1)`, `file(1).ext`, then `(2)`, `(3)`, etc. | A | Must |
+| FR-1040 | After the user chooses **MERGE** for a folder, the first file conflict under that merged folder may offer `Apply this choice to all remaining file conflicts under this merged folder`. If selected, the remembered file decision applies only within that merged-folder scope; a different merged folder asks independently. | A | Must |
+| FR-1041 | Cancelling extraction may leave files that were already fully completed; Ferry shall report partial results. Incomplete files shall not remain under final filenames. | A | Must |
+| FR-1042 | If the user attempts to close Ferry while an archive operation is active, Ferry shall confirm closing/cancellation and allow archive cleanup to complete before application shutdown. | A | Must |
+| FR-1043 | Choice labels controlled by Ferry for archive confirmations/conflicts shall remain English (`YES`/`NO`, `MERGE`, `KEEP BOTH`, `REPLACE`, `SKIP`, `CANCEL`) independent of the Windows display language. | A | Must |
 
 ### External terminal details
 
@@ -673,7 +684,8 @@ Ferry v1.0 intentionally does **not** attempt to implement:
 - Everything replacement/integration;
 - high-performance custom copy engine;
 - copy queue/graphs;
-- custom archive engine;
+- non-ZIP archive formats such as 7z/RAR as Ferry-owned archive workflows;
+- custom compression codec/Deflate implementation from scratch;
 - separate/custom Recycle Bin storage engine (Ferry may provide a virtual Recycle Bin view while Windows remains the storage/operation authority);
 - custom terminal emulator;
 - custom ACL editor;
@@ -798,8 +810,8 @@ The UI vocabulary is simple enough that internationalization infrastructure is n
 ### D-012 — Individual rename follows Nautilus extension behavior
 Single-item rename displays the complete filename including the extension, but selects only the filename stem by default. The extension remains intentionally editable when the user selects or moves into it. Bulk rename continues to protect extensions.
 
-### D-013 — ZIP support uses Windows rather than a Ferry codec
-Ferry exposes ZIP compression/extraction as frequent right-click actions but delegates archive creation/extraction to the Windows 11 archive tool. Ferry does not maintain its own compression library, archive format implementation, or persistent archive subsystem.
+### D-013 — Ferry owns the ZIP workflow, not the compression codec
+Ferry owns ZIP create/extract orchestration, byte-based progress, ETA, cancellation, conflict handling, and extraction safety policy. ZIP container/compression support comes from .NET `System.IO.Compression.ZipArchive`; Ferry does not implement Deflate or another compression codec from scratch and does not invoke an external archive command-line tool for its ZIP workflow.
 
 ### D-014 — Public defaults are machine-neutral
 The public distribution shall not embed developer-specific absolute paths. Factory Home is `%USERPROFILE%`; terminal command is blank/Auto and resolves through Windows Terminal → Windows PowerShell → Command Prompt, while custom terminal configuration remains available.
@@ -839,13 +851,15 @@ The RC1–RC10 custom Explorer-style selection engine is not part of public v1.0
 | **1.0.21** | v1.0.1 RC3 archive-operation feedback: adds a persistent window-level indeterminate progress bar for ZIP compression and extraction while continuing to delegate archive work to the Windows-provided archive tool. |
 | **1.0.22** | v1.0.1 RC4 archive-operation polish: changes the indeterminate archive progress indicator to a neutral gray treatment and shows a short completion message after successful compression or extraction. |
 
+| **1.0.24** | v1.0.2 ZIP baseline: replaces external Windows archive-tool delegation with Ferry-owned ZIP workflow over .NET `System.IO.Compression`; adds determinate progress/speed/ETA/Cancel, non-blocking operation, extraction safety gates/warnings, temporary-file finalization, MERGE/KEEP BOTH conflict handling, MERGE-local remembered file conflict decisions, and safe application-close cancellation. |
+
 Release notes remain the authoritative chronological record of what changed in each application build. This specification remains the authoritative description of the **current intended v1.0 behavior**.
 
 ---
 
 # 10. Requirements baseline status
 
-The F01–F12 requirements review is complete and the baseline has been updated through Ferry v1.0.1 release-candidate specification revision 1.0.22.
+The F01–F12 requirements review is complete and the baseline has been updated through Ferry v1.0.2 specification revision 1.0.24.
 
 Implementation may refine technical mechanisms, but any change that alters user-visible behavior, Must/Should scope, the Windows-delegation boundary, or Ferry's resource philosophy shall be treated as a specification change and reflected in this document.
 

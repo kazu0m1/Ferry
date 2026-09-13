@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在の正式版:** v1.0.1  
+> **現在のリリース:** v1.0.2  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.0.1 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.1-win-portable.zip)**
+**[Ferry v1.0.2 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.2-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -35,7 +35,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 - **強力な一括リネーム** — 置換・連番・開始番号指定・ライブプレビュー
 - **タブ** — 必要十分なタブブラウジング
 - **Windowsとの自然な統合** — ごみ箱、プロパティ、詳細Shellメニュー、ショートカット、D&D
-- **ZIP圧縮・展開** — Windows 11標準機能へ委譲
+- **ZIP圧縮・展開** — Ferry側で進捗・ETA・Cancel・競合処理・安全確認まで管理
 - **Portable** — 設定は小さなJSON。独自DBもテレメトリもありません
 
 ### 小さいけれど、日常で効く工夫：`F12`
@@ -48,7 +48,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上の**ダウンロード**リンクから`Ferry-v1.0.1-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.0.2-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -63,7 +63,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## 公開版v1.0.1の初期設定
+## v1.0.2の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -151,11 +151,22 @@ Windows管理のごみ箱をFerry内の仮想ビューとして表示します�
 
 ### ZIP
 
-- Compress to ZIP
-- Extract Here
-- Extract to `<archive-name>\`
+- **Compress to ZIP**
+- **Extract Here**
+- **Extract to `<archive-name>\`**
 
-Ferry独自の圧縮コーデックは持たず、Windows 11のアーカイブ機能へ委譲します。圧縮/展開中は下部ステータスにグレーの往復型ProgressBarを表示し、別フォルダーへ移動しても処理完了まで維持します。正常終了時は完了メッセージを約3秒表示します。
+FerryはZIP処理のワークフローを自前で管理し、ZIPコンテナ/Deflate処理には.NET標準の`System.IO.Compression`を使用します。Windowsのarchive command-line toolはZIP処理に使用しません。一方で、圧縮アルゴリズムそのものをゼロから自作しているわけではありません。
+
+Start後は設定windowを閉じ、Ferry下部statusへ処理を移します。Ferry本体はそのまま操作でき、グレーのoverall ProgressBar 1本と、処理済み/総量、file count、速度、利用可能な場合はETA、Cancelを表示します。
+
+解凍時の競合処理は次の通りです。
+
+- folder: **MERGE / KEEP BOTH / SKIP / CANCEL**
+- file: **REPLACE / KEEP BOTH / SKIP / CANCEL**
+- KEEP BOTHは`Folder(1)`、`photo(1).jpg`のような衝突しない名前を生成
+- folderをMERGEした後、その配下で最初にfile conflictが起きたときだけ、そのmerged folder配下の残りfile conflictsへ同じ選択を適用可能
+
+解凍前/中には危険なpath/nameをブロックし、各fileは一時fileへ書き終えてから完成名へ確定します。大量リソースを消費する可能性があるZIPは一律拒否せず警告し、ユーザーが続行/中止を選択できます。現在の警告初期値は、展開後20 GiB超、50,000 files超、圧縮率100倍超です。
 
 ## Open with FerryをExplorerへ追加
 
@@ -238,7 +249,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.0.1-win-portable.zip
+dist\Ferry-v1.0.2-win-portable.zip
 ```
 
 です。

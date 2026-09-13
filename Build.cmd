@@ -26,6 +26,24 @@ if not exist "%WPF_DIR%\PresentationFramework.dll" (
   exit /b 1
 )
 
+if not exist "%FRAMEWORK_DIR%System.IO.Compression.dll" (
+  echo.
+  echo ERROR: System.IO.Compression.dll was not found in:
+  echo   %FRAMEWORK_DIR%
+  echo.
+  pause
+  exit /b 1
+)
+
+if not exist "%FRAMEWORK_DIR%System.IO.Compression.FileSystem.dll" (
+  echo.
+  echo ERROR: System.IO.Compression.FileSystem.dll was not found in:
+  echo   %FRAMEWORK_DIR%
+  echo.
+  pause
+  exit /b 1
+)
+
 if not exist "Portable" mkdir "Portable"
 if not exist "Portable\config" mkdir "Portable\config"
 
@@ -33,6 +51,8 @@ echo Building Ferry.exe...
 "%CSC%" /nologo /target:winexe /optimize+ /platform:anycpu /win32manifest:"Source\Ferry\app.manifest" /out:"Portable\Ferry.exe" ^
  /reference:"%FRAMEWORK_DIR%System.dll" ^
  /reference:"%FRAMEWORK_DIR%System.Core.dll" ^
+ /reference:"%FRAMEWORK_DIR%System.IO.Compression.dll" ^
+ /reference:"%FRAMEWORK_DIR%System.IO.Compression.FileSystem.dll" ^
  /reference:"%FRAMEWORK_DIR%System.Data.dll" ^
  /reference:"%FRAMEWORK_DIR%System.Web.Extensions.dll" ^
  /reference:"%FRAMEWORK_DIR%System.Xaml.dll" ^
@@ -42,8 +62,12 @@ echo Building Ferry.exe...
  /reference:"%WPF_DIR%\PresentationFramework.dll" ^
  "Source\Ferry\AppSettings.cs" ^
  "Source\Ferry\ArchiveHelper.cs" ^
+ "Source\Ferry\ArchiveModels.cs" ^
+ "Source\Ferry\ArchiveService.cs" ^
+ "Source\Ferry\ArchiveSetupWindows.cs" ^
  "Source\Ferry\AssemblyInfo.cs" ^
  "Source\Ferry\ClipboardHelper.cs" ^
+ "Source\Ferry\ChoiceDialog.cs" ^
  "Source\Ferry\FileItem.cs" ^
  "Source\Ferry\FileItemComparer.cs" ^
  "Source\Ferry\KnownFolders.cs" ^
@@ -60,6 +84,7 @@ echo Building Ferry.exe...
  "Source\Ferry\SettingsWindow.cs" ^
  "Source\Ferry\ShellContextMenu.cs" ^
  "Source\Ferry\ShellFileOperations.cs" ^
+ "Source\Ferry\ShellFolderPicker.cs" ^
  "Source\Ferry\ShellInterop.cs" ^
  "Source\Ferry\ShortcutHelper.cs" ^
  "Source\Ferry\TabState.cs" ^

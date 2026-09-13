@@ -1,5 +1,35 @@
 ﻿# Ferry Changelog
 
+## v1.0.2 — 2026-09-13
+
+Ferry v1.0.2 replaces the previous Windows-delegated ZIP workflow with a Ferry-owned ZIP workflow built on .NET `System.IO.Compression`.
+
+### ZIP progress / control
+
+- Determinate overall progress in the bottom status area.
+- Processed/total data, file count, speed, ETA when available, and Cancel.
+- Setup window closes after Start; Ferry remains usable during archive work.
+- One archive job per Ferry window at a time.
+
+### Extraction conflicts
+
+- Folder conflicts: MERGE / KEEP BOTH / SKIP / CANCEL.
+- File conflicts: REPLACE / KEEP BOTH / SKIP / CANCEL.
+- KEEP BOTH uses `name(1)` / `name(1).ext`, then incrementing suffixes.
+- After MERGE, a file decision can optionally be remembered for the remaining file conflicts under that merged folder only.
+
+### ZIP safety
+
+- Blocks unsafe destination escape/path traversal, rooted paths, ADS-style names, reserved Windows device-name forms, and unsafe reparse-point merge/replace cases.
+- Warns for expanded data >20 GiB, >50,000 files, or compression ratio >100×; the user chooses YES/NO.
+- Uses temporary output files before finalizing extracted files.
+- Safe cancellation/partial-result reporting and safe Ferry close while archive work is active.
+
+### Validation
+
+- Integrated ZIP Prototype 4 passed Windows regression and safety tests before release packaging.
+- The accepted RC1 application logic is promoted unchanged to v1.0.2 final; finalization changes release metadata/documentation only.
+
 ## v1.0.1 — 2026-09-12
 
 Ferry v1.0.1 focuses on small daily-workflow improvements and lighter List-view behavior.

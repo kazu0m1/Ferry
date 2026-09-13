@@ -1,44 +1,52 @@
-﻿# Ferry v1.0.1 正式リリースチェックリスト
+# Ferry v1.0.2 正式リリースチェックリスト
 
-RC4の実機確認済みロジックを、機能変更なしでv1.0.1へ昇格する。
+WindowsでACCEPT済みのv1.0.2-rc1ロジックを、機能変更なしでv1.0.2へ昇格する。
 
 ## A. Source / metadata
 
-- [ ] `AssemblyInformationalVersion` が `1.0.1`
-- [ ] Settings → About Ferry が `Version 1.0.1` を表示
-- [ ] `Portable/README.txt` が `Ferry v1.0.1 Portable`
-- [ ] `Make-PortableRelease.cmd` が `VERSION=1.0.1`
-- [ ] README / README.ja のCurrent releaseとDownloadリンクがv1.0.1
-- [ ] `RELEASE_NOTES_v1.0.1.md`を確認
+- [ ] `AssemblyVersion` = `1.0.2.0`
+- [ ] `AssemblyFileVersion` = `1.0.2.0`
+- [ ] `AssemblyInformationalVersion` = `1.0.2`
+- [ ] Settings → About Ferry = `Version 1.0.2`
+- [ ] `Portable/README.txt` = `Ferry v1.0.2 Portable`
+- [ ] `Make-PortableRelease.cmd` = `VERSION=1.0.2`
+- [ ] README / README.ja のCurrent releaseと直接Downloadリンクがv1.0.2
+- [ ] `RELEASE_NOTES_v1.0.2.md`を確認
 
-## B. Windows build
+## B. Windows final gate
 
-1. `Build.cmd` を実行
-2. `Portable\Ferry.exe` を起動
+1. `Build.cmd` を実行する。
+2. `Portable\Ferry.exe` を起動する。
 3. 最小確認:
-   - [ ] Home / Navigation
-   - [ ] Inline Rename / New Folder
-   - [ ] Pinned D&D reorder
-   - [ ] List icon / Grid thumbnail
-   - [ ] 全角/半角検索
-   - [ ] F12 Open Terminal Here
-   - [ ] ZIP圧縮/展開ProgressBarと3秒完了表示
-   - [ ] Settings → About Ferry = Version 1.0.1
+   - [ ] 正常起動する
+   - [ ] About = `Version 1.0.2`
+   - [ ] 通常のZIP圧縮を1回実行できる
+   - [ ] 通常のZIP展開を1回実行できる
+   - [ ] 圧縮/展開後も通常のフォルダー移動ができる
+
+RC1で回帰・安全・競合・Cancel・PortableスモークまでPASS済みのため、Finalでは同じ網羅試験を繰り返さない。
 
 ## C. Portable ZIP
 
 - [ ] `Make-PortableRelease.cmd` を実行
-- [ ] `dist\Ferry-v1.0.1-win-portable.zip` が生成
-- [ ] ZIPを別フォルダーへ展開して`Ferry.exe`を起動
+- [ ] `dist\Ferry-v1.0.2-win-portable.zip` が生成
+- [ ] 表示されたSHA-256を記録
+- [ ] ZIPを新しい別フォルダーへ展開
+- [ ] 展開先の`Ferry.exe`が正常起動
+- [ ] About = `Version 1.0.2`
 - [ ] `config`がローカルに生成/保存される
+- [ ] ZIP圧縮/展開を各1回実行できる
 
 ## D. GitHub
 
 - [ ] 正式版Source内容をGit管理フォルダーへ反映
-- [ ] prototype/RC一時文書を公開ルートから削除
+- [ ] RC用一時文書が公開ルートから削除されている
 - [ ] Commit / Push
-- [ ] Tag: `v1.0.1`
-- [ ] Release title: `Ferry v1.0.1`
-- [ ] Release本文: `RELEASE_NOTES_v1.0.1.md`
-- [ ] Asset: `Ferry-v1.0.1-win-portable.zip`
-- [ ] READMEの直接DownloadリンクからAssetを取得できることを確認
+- [ ] Tag: `v1.0.2`
+- [ ] Release title: `Ferry v1.0.2`
+- [ ] Release本文: `RELEASE_NOTES_v1.0.2.md`
+- [ ] Asset: `Ferry-v1.0.2-win-portable.zip`
+- [ ] Pre-release: OFF
+- [ ] READMEの直接DownloadリンクからAssetを取得できる
+
+全項目PASSで **Ferry v1.0.2 = RELEASED**。

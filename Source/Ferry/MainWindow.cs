@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -37,8 +38,14 @@ namespace Ferry
         private ComboBox searchModeBox;
         private TextBlock statusText;
         private ProgressBar statusProgress;
-        private readonly SortedDictionary<int, string> archiveActivities = new SortedDictionary<int, string>();
-        private int nextArchiveActivityId;
+        private Button archiveCancelButton;
+        private readonly ArchiveService archiveService = new ArchiveService();
+        private readonly ArchiveThresholds archiveThresholds = new ArchiveThresholds();
+        private CancellationTokenSource archiveCancellation;
+        private ArchiveProgressInfo archiveProgressInfo;
+        private bool archiveOperationActive;
+        private string archiveOperationLabel;
+        private bool closeAfterArchiveCancellation;
         private DispatcherTimer transientStatusTimer;
         private string transientStatusMessage;
         private DateTime transientStatusUntilUtc;
@@ -167,20 +174,34 @@ namespace Ferry
             Grid statusGrid = new Grid();
             statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            statusText = new TextBlock { Text = "Ready", VerticalAlignment = VerticalAlignment.Center };
+            statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            statusText = new TextBlock { Text = "Ready", VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
             statusProgress = new ProgressBar
             {
-                Width = 150,
+                Width = 160,
                 Height = 12,
                 Margin = new Thickness(12, 0, 0, 0),
-                IsIndeterminate = true,
+                Minimum = 0,
+                Maximum = 100,
+                IsIndeterminate = false,
                 Visibility = Visibility.Collapsed,
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = Brushes.Gray,
                 Background = SystemColors.ControlLightBrush
             };
+            archiveCancelButton = new Button
+            {
+                Content = "Cancel",
+                MinWidth = 62,
+                Padding = new Thickness(8, 1, 8, 1),
+                Margin = new Thickness(8, 0, 0, 0),
+                Visibility = Visibility.Collapsed,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            archiveCancelButton.Click += delegate { CancelArchiveOperation(); };
             statusGrid.Children.Add(statusText); Grid.SetColumn(statusText, 0);
             statusGrid.Children.Add(statusProgress); Grid.SetColumn(statusProgress, 1);
+            statusGrid.Children.Add(archiveCancelButton); Grid.SetColumn(archiveCancelButton, 2);
             status.Child = statusGrid; root.Children.Add(status); Grid.SetRow(status, 2);
             return root;
         }
@@ -730,11 +751,17 @@ namespace Ferry
                 menu.Items.Add(Item(paths.Count > 1 ? "Batch Rename…" : "Rename", delegate { RenameSelected(state); }));
                 menu.Items.Add(Item("Delete", delegate { DeleteSelected(state, false); }));
                 menu.Items.Add(new Separator());
-                menu.Items.Add(Item("Compress to ZIP", delegate { CompressSelected(state, paths); }));
+                MenuItem compressZip = Item("Compress to ZIP", delegate { CompressSelected(state, paths); });
+                compressZip.IsEnabled = !archiveOperationActive;
+                menu.Items.Add(compressZip);
                 if (single != null && ArchiveHelper.IsZip(single.FullPath))
                 {
-                    menu.Items.Add(Item("Extract Here", delegate { ExtractZip(state, single.FullPath, false); }));
-                    menu.Items.Add(Item("Extract to \"" + Path.GetFileNameWithoutExtension(single.FullPath) + "\\\"", delegate { ExtractZip(state, single.FullPath, true); }));
+                    MenuItem extractHere = Item("Extract Here", delegate { ExtractZip(state, single.FullPath, false); });
+                    MenuItem extractNamed = Item("Extract to \"" + Path.GetFileNameWithoutExtension(single.FullPath) + "\\\"", delegate { ExtractZip(state, single.FullPath, true); });
+                    extractHere.IsEnabled = !archiveOperationActive;
+                    extractNamed.IsEnabled = !archiveOperationActive;
+                    menu.Items.Add(extractHere);
+                    menu.Items.Add(extractNamed);
                 }
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item("Create Shortcut", delegate { CreateShortcut(paths); }));
@@ -1925,58 +1952,202 @@ namespace Ferry
             try { InvalidateRenameUndo(); for (int i = 0; i < paths.Count; i++) ShortcutHelper.Create(paths[i]); TabState state = ActiveState; if (state != null) ScheduleFolderRefresh(state); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
-        private void CompressSelected(TabState state, IList<string> paths)
+        private async void CompressSelected(TabState state, IList<string> paths)
         {
             if (state == null || state.IsRecycleBin || paths == null || paths.Count == 0) return;
-            InvalidateRenameUndo(); List<string> copy = new List<string>(); for (int i = 0; i < paths.Count; i++) copy.Add(paths[i]);
-            string outputDirectory = state.CurrentPath;
-            int activityId = BeginArchiveActivity("Compressing to ZIP…");
-            Task.Run(delegate
+            if (archiveOperationActive)
             {
-                try
-                {
-                    ArchiveHelper.CompressToZip(copy, outputDirectory);
-                    Dispatcher.BeginInvoke(new Action(delegate
-                    {
-                        EndArchiveActivity(activityId, "ZIP compression complete.");
-                        if (!state.IsSearching) ScheduleFolderRefresh(state); else UpdateStatus();
-                    }));
-                }
-                catch (Exception ex)
-                {
-                    Dispatcher.BeginInvoke(new Action(delegate
-                    {
-                        EndArchiveActivity(activityId, null);
-                        MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }));
-                }
-            });
+                ShowTimedStatusMessage("An archive operation is already in progress.", 2500);
+                return;
+            }
+
+            InvalidateRenameUndo();
+            List<string> copy = new List<string>();
+            for (int i = 0; i < paths.Count; i++) copy.Add(paths[i]);
+
+            string initialDestination;
+            try { initialDestination = ArchiveHelper.SuggestZipPath(copy, state.CurrentPath); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            CreateZipSetupWindow setup = new CreateZipSetupWindow(this, copy, initialDestination);
+            if (setup.ShowDialog() != true) return;
+
+            string destination = setup.DestinationZipPath;
+            bool overwrite = false;
+            if (File.Exists(destination))
+            {
+                ChoiceDialogResult replace = ChoiceDialog.ShowYesNo(
+                    this,
+                    "Replace ZIP?",
+                    "The destination ZIP already exists. Replace it?\n\n" + destination,
+                    ChoiceDialogResult.No);
+                if (replace != ChoiceDialogResult.Yes) return;
+                overwrite = true;
+            }
+
+            BeginArchiveOperation("Compressing ZIP");
+            try
+            {
+                Progress<ArchiveProgressInfo> progress = new Progress<ArchiveProgressInfo>(UpdateArchiveProgress);
+                ArchiveOperationResult result = await archiveService.CreateZipAsync(
+                    copy,
+                    destination,
+                    overwrite,
+                    progress,
+                    archiveCancellation.Token);
+
+                string completionMessage = result.Status == ArchiveOperationStatus.Completed
+                    ? "ZIP compression complete."
+                    : "ZIP compression cancelled.";
+                EndArchiveOperation(completionMessage);
+
+                if (contexts.ContainsKey(state.Id) && !state.IsSearching) ScheduleFolderRefresh(state);
+                else UpdateStatus();
+            }
+            catch (Exception ex)
+            {
+                EndArchiveOperation(null);
+                MessageBox.Show(this, ex.Message, "Compression failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void ExtractZip(TabState state, string zipPath, bool namedFolder)
+        private async void ExtractZip(TabState state, string zipPath, bool namedFolder)
         {
             if (state == null || state.IsRecycleBin || string.IsNullOrEmpty(zipPath)) return;
-            InvalidateRenameUndo();
-            int activityId = BeginArchiveActivity("Extracting ZIP…");
-            Task.Run(delegate
+            if (archiveOperationActive)
             {
-                try
+                ShowTimedStatusMessage("An archive operation is already in progress.", 2500);
+                return;
+            }
+
+            InvalidateRenameUndo();
+            string initialDestination;
+            try { initialDestination = ArchiveHelper.SuggestExtractionDirectory(zipPath, namedFolder); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            ExtractZipSetupWindow setup = new ExtractZipSetupWindow(this, zipPath, initialDestination);
+            if (setup.ShowDialog() != true) return;
+
+            BeginArchiveOperation("Extracting ZIP");
+            try
+            {
+                Progress<ArchiveProgressInfo> progress = new Progress<ArchiveProgressInfo>(UpdateArchiveProgress);
+                ArchiveOperationResult result = await archiveService.ExtractZipAsync(
+                    setup.SourceZipPath,
+                    setup.DestinationDirectory,
+                    archiveThresholds,
+                    ConfirmArchiveSafetyRiskAsync,
+                    ConfirmArchiveConflictAsync,
+                    progress,
+                    archiveCancellation.Token);
+
+                string completionMessage = "ZIP extraction complete.";
+                if (result.Status == ArchiveOperationStatus.Cancelled)
                 {
-                    if (namedFolder) ArchiveHelper.ExtractToNamedFolder(zipPath); else ArchiveHelper.ExtractHere(zipPath);
-                    Dispatcher.BeginInvoke(new Action(delegate
+                    completionMessage = result.CompletedFiles > 0
+                        ? "ZIP extraction cancelled (partial result kept)."
+                        : "ZIP extraction cancelled.";
+                    if (result.CompletedFiles > 0)
                     {
-                        EndArchiveActivity(activityId, "ZIP extraction complete.");
-                        if (!state.IsSearching) ScheduleFolderRefresh(state); else UpdateStatus();
-                    }));
+                        MessageBox.Show(
+                            this,
+                            "Extraction was cancelled. " + result.CompletedFiles.ToString("N0") + " completed file(s) remain in the destination.",
+                            "Extraction cancelled",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
                 }
-                catch (Exception ex)
+                else if (result.Status == ArchiveOperationStatus.Partial || result.Status == ArchiveOperationStatus.Failed)
                 {
-                    Dispatcher.BeginInvoke(new Action(delegate
-                    {
-                        EndArchiveActivity(activityId, null);
-                        MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }));
+                    completionMessage = result.Status == ArchiveOperationStatus.Partial
+                        ? "ZIP extraction stopped (partial result kept)."
+                        : "ZIP extraction failed.";
+                    string detail = string.IsNullOrEmpty(result.ErrorMessage) ? "Extraction did not complete." : result.ErrorMessage;
+                    if (result.Status == ArchiveOperationStatus.Partial)
+                        detail = "Extraction stopped after " + result.CompletedFiles.ToString("N0") + " file(s) were completed. Those files remain in the destination.\n\n" + detail;
+                    MessageBox.Show(this, detail, "Extraction failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+                else if (result.SkippedFiles > 0 || result.KeptBothConflicts > 0)
+                {
+                    var summaryParts = new List<string>();
+                    if (result.KeptBothConflicts > 0)
+                        summaryParts.Add(result.KeptBothConflicts.ToString("N0") + " conflict(s) kept separately");
+                    if (result.SkippedFiles > 0)
+                        summaryParts.Add(result.SkippedFiles.ToString("N0") + " file(s) skipped");
+                    completionMessage = "ZIP extraction complete. " + String.Join(", ", summaryParts.ToArray()) + ".";
+                }
+
+                EndArchiveOperation(completionMessage);
+                if (contexts.ContainsKey(state.Id) && !state.IsSearching) ScheduleFolderRefresh(state);
+                else UpdateStatus();
+            }
+            catch (InvalidDataException ex)
+            {
+                EndArchiveOperation("ZIP extraction blocked.");
+                MessageBox.Show(
+                    this,
+                    "Ferry blocked this ZIP because its path information is unsafe or invalid.\n\n" + ex.Message,
+                    "ZIP blocked",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                EndArchiveOperation(null);
+                MessageBox.Show(this, ex.Message, "Extraction failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private Task<bool> ConfirmArchiveSafetyRiskAsync(ArchiveSafetyReport report)
+        {
+            bool continueExtraction = false;
+            Action show = delegate
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine("This ZIP may require unusually large resources.");
+                builder.AppendLine();
+                builder.AppendLine("Compressed data: " + FormatArchiveBytes(report.CompressedBytes));
+                builder.AppendLine("Expanded data:   " + FormatArchiveBytes(report.ExpandedBytes));
+                builder.AppendLine("Files:           " + report.FileCount.ToString("N0"));
+                builder.AppendLine("Compression ratio: " + FormatArchiveRatio(report.CompressionRatio));
+                builder.AppendLine();
+                builder.AppendLine("Triggered warning(s):");
+                for (int i = 0; i < report.Issues.Count; i++) builder.AppendLine("  • " + report.Issues[i].Message);
+                builder.AppendLine();
+                builder.Append("Continue extracting?");
+
+                ChoiceDialogResult answer = ChoiceDialog.ShowYesNo(
+                    this,
+                    "ZIP resource warning",
+                    builder.ToString(),
+                    ChoiceDialogResult.No);
+                continueExtraction = answer == ChoiceDialogResult.Yes;
+            };
+
+            if (Dispatcher.CheckAccess()) show(); else Dispatcher.Invoke(show);
+            return Task.FromResult(continueExtraction);
+        }
+
+        private Task<ArchiveConflictResolution> ConfirmArchiveConflictAsync(ArchiveOverwriteRequest request)
+        {
+            ArchiveConflictResolution resolution = null;
+            Action show = delegate
+            {
+                resolution = ChoiceDialog.ShowArchiveConflict(this, request);
+            };
+
+            if (Dispatcher.CheckAccess()) show(); else Dispatcher.Invoke(show);
+            return Task.FromResult(resolution ?? new ArchiveConflictResolution
+            {
+                Decision = ArchiveOverwriteDecision.Cancel
             });
         }
 
@@ -2333,20 +2504,64 @@ namespace Ferry
             if (state == null || !contexts.ContainsKey(state.Id)) return; TabViewContext ctx = contexts[state.Id]; StopSearchDrain(ctx); CancelGridThumbnailLoad(ctx); state.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } tabs.Items.Remove(ctx.TabItem); contexts.Remove(state.Id); if (tabs.Items.Count == 0) Close();
         }
 
-        private int BeginArchiveActivity(string label)
+        private void BeginArchiveOperation(string label)
         {
-            int id = ++nextArchiveActivityId;
-            archiveActivities[id] = string.IsNullOrEmpty(label) ? "Archive operation in progress…" : label;
+            if (archiveCancellation != null)
+            {
+                try { archiveCancellation.Dispose(); } catch { }
+            }
+            archiveCancellation = new CancellationTokenSource();
+            archiveOperationActive = true;
+            archiveOperationLabel = string.IsNullOrEmpty(label) ? "Archive operation" : label;
+            archiveProgressInfo = new ArchiveProgressInfo { Phase = ArchivePhase.Scanning, CurrentItem = "Preparing..." };
             UpdateStatus();
-            return id;
         }
 
-        private void EndArchiveActivity(int id, string completionMessage)
+        private void CancelArchiveOperation()
         {
-            archiveActivities.Remove(id);
-            if (archiveActivities.Count == 0 && !string.IsNullOrEmpty(completionMessage))
+            if (!archiveOperationActive || archiveCancellation == null) return;
+            if (!archiveCancellation.IsCancellationRequested) archiveCancellation.Cancel();
+            if (archiveCancelButton != null) archiveCancelButton.IsEnabled = false;
+            if (statusText != null) statusText.Text = "Cancelling archive operation...";
+        }
+
+        private void UpdateArchiveProgress(ArchiveProgressInfo info)
+        {
+            if (!archiveOperationActive || info == null) return;
+            archiveProgressInfo = info;
+            UpdateStatus();
+        }
+
+        private void EndArchiveOperation(string completionMessage)
+        {
+            archiveOperationActive = false;
+            archiveProgressInfo = null;
+            archiveOperationLabel = null;
+            if (archiveCancellation != null)
             {
-                ShowTimedStatusMessage(completionMessage, 3000);
+                try { archiveCancellation.Dispose(); } catch { }
+                archiveCancellation = null;
+            }
+            if (archiveCancelButton != null)
+            {
+                archiveCancelButton.Visibility = Visibility.Collapsed;
+                archiveCancelButton.IsEnabled = true;
+            }
+            if (statusProgress != null)
+            {
+                statusProgress.Visibility = Visibility.Collapsed;
+                statusProgress.IsIndeterminate = false;
+                statusProgress.Value = 0;
+            }
+            if (closeAfterArchiveCancellation)
+            {
+                closeAfterArchiveCancellation = false;
+                Dispatcher.BeginInvoke(new Action(Close));
+                return;
+            }
+            if (!string.IsNullOrEmpty(completionMessage))
+            {
+                ShowTimedStatusMessage(completionMessage, 3500);
                 return;
             }
             UpdateStatus();
@@ -2382,41 +2597,184 @@ namespace Ferry
                 if (transientStatusTimer != null) transientStatusTimer.Stop();
                 return false;
             }
-            if (statusProgress != null) statusProgress.Visibility = Visibility.Collapsed;
-            if (statusText != null) statusText.Text = transientStatusMessage;
+            HideArchiveStatusControls();
+            if (statusText != null)
+            {
+                statusText.Text = transientStatusMessage;
+                statusText.ToolTip = transientStatusMessage;
+            }
             return true;
         }
 
         private bool ShowArchiveActivityStatus()
         {
-            if (archiveActivities.Count == 0) return false;
-            string label = null;
-            foreach (KeyValuePair<int, string> pair in archiveActivities) label = pair.Value;
-            if (archiveActivities.Count > 1) label = "Archive operations in progress… (" + archiveActivities.Count.ToString() + ")";
-            if (statusText != null) statusText.Text = label ?? "Archive operation in progress…";
-            if (statusProgress != null) statusProgress.Visibility = Visibility.Visible;
+            if (!archiveOperationActive) return false;
+
+            ArchiveProgressInfo info = archiveProgressInfo;
+            string label = FormatArchiveProgressStatus(info);
+            if (statusText != null)
+            {
+                statusText.Text = label;
+                statusText.ToolTip = label;
+            }
+
+            if (statusProgress != null)
+            {
+                statusProgress.Visibility = Visibility.Visible;
+                bool indeterminate = info == null || info.Phase == ArchivePhase.Scanning || info.Phase == ArchivePhase.WaitingForConfirmation;
+                statusProgress.IsIndeterminate = indeterminate;
+                if (!indeterminate) statusProgress.Value = info == null ? 0 : info.OverallPercent;
+            }
+
+            if (archiveCancelButton != null)
+            {
+                archiveCancelButton.Visibility = Visibility.Visible;
+                archiveCancelButton.IsEnabled = archiveCancellation != null && !archiveCancellation.IsCancellationRequested;
+            }
             return true;
+        }
+
+        private void HideArchiveStatusControls()
+        {
+            if (statusProgress != null)
+            {
+                statusProgress.Visibility = Visibility.Collapsed;
+                statusProgress.IsIndeterminate = false;
+            }
+            if (archiveCancelButton != null)
+            {
+                archiveCancelButton.Visibility = Visibility.Collapsed;
+                archiveCancelButton.IsEnabled = true;
+            }
+        }
+
+        private string FormatArchiveProgressStatus(ArchiveProgressInfo info)
+        {
+            if (info == null) return (archiveOperationLabel ?? "Archive operation") + "...";
+
+            string phase;
+            switch (info.Phase)
+            {
+                case ArchivePhase.Scanning: phase = "Scanning"; break;
+                case ArchivePhase.WaitingForConfirmation: phase = "Waiting for confirmation"; break;
+                case ArchivePhase.Compressing: phase = "Compressing"; break;
+                case ArchivePhase.Extracting: phase = "Extracting"; break;
+                case ArchivePhase.Finalizing: phase = "Finalizing"; break;
+                case ArchivePhase.Cancelled: phase = "Cancelling"; break;
+                default: phase = archiveOperationLabel ?? "Archive operation"; break;
+            }
+
+            StringBuilder builder = new StringBuilder(phase);
+            if (!string.IsNullOrEmpty(info.CurrentItem) &&
+                info.Phase != ArchivePhase.Scanning &&
+                info.Phase != ArchivePhase.WaitingForConfirmation &&
+                info.Phase != ArchivePhase.Finalizing)
+            {
+                builder.Append(" — ");
+                builder.Append(info.CurrentItem);
+            }
+            if (info.TotalBytes > 0)
+            {
+                builder.Append("  •  ");
+                builder.Append(FormatArchiveBytes(info.ProcessedBytes));
+                builder.Append(" / ");
+                builder.Append(FormatArchiveBytes(info.TotalBytes));
+                builder.Append(" (");
+                builder.Append(info.OverallPercent.ToString("F0"));
+                builder.Append("%)");
+            }
+            else if (info.TotalFiles > 0)
+            {
+                builder.Append("  •  Files ");
+                builder.Append(info.ProcessedFiles.ToString("N0"));
+                builder.Append(" / ");
+                builder.Append(info.TotalFiles.ToString("N0"));
+            }
+
+            if (info.TotalFiles > 0 && info.TotalBytes > 0)
+            {
+                builder.Append("  •  Files ");
+                builder.Append(info.ProcessedFiles.ToString("N0"));
+                builder.Append(" / ");
+                builder.Append(info.TotalFiles.ToString("N0"));
+            }
+
+            if (info.BytesPerSecond > 0)
+            {
+                builder.Append("  •  ");
+                builder.Append(FormatArchiveBytes((long)info.BytesPerSecond));
+                builder.Append("/s");
+                if (info.EstimatedRemaining.HasValue)
+                {
+                    builder.Append("  •  Remaining ");
+                    builder.Append(FormatArchiveEta(info.EstimatedRemaining.Value));
+                }
+            }
+            else if (info.Phase == ArchivePhase.Compressing || info.Phase == ArchivePhase.Extracting)
+            {
+                builder.Append("  •  Remaining calculating...");
+            }
+
+            return builder.ToString();
+        }
+
+        private static string FormatArchiveBytes(long bytes)
+        {
+            if (bytes < 0) bytes = 0;
+            double value = bytes;
+            string[] units = new string[] { "B", "KiB", "MiB", "GiB", "TiB" };
+            int unit = 0;
+            while (value >= 1024.0 && unit < units.Length - 1)
+            {
+                value /= 1024.0;
+                unit++;
+            }
+            if (unit == 0) return ((long)value).ToString("N0") + " " + units[unit];
+            return value.ToString(value >= 100 ? "F0" : value >= 10 ? "F1" : "F2") + " " + units[unit];
+        }
+
+        private static string FormatArchiveEta(TimeSpan value)
+        {
+            if (value < TimeSpan.Zero) value = TimeSpan.Zero;
+            if (value.TotalSeconds < 60) return Math.Ceiling(value.TotalSeconds).ToString("F0") + " sec";
+            if (value.TotalMinutes < 60) return Math.Ceiling(value.TotalMinutes).ToString("F0") + " min";
+            return ((int)value.TotalHours).ToString() + "h " + value.Minutes.ToString() + "m";
+        }
+
+        private static string FormatArchiveRatio(double ratio)
+        {
+            if (double.IsInfinity(ratio)) return "∞";
+            if (double.IsNaN(ratio)) return "n/a";
+            return ratio.ToString("N1") + "×";
         }
 
         private void SetStatusMessage(string message)
         {
             if (ShowArchiveActivityStatus()) return;
             if (ShowTransientStatusMessage()) return;
-            if (statusProgress != null) statusProgress.Visibility = Visibility.Collapsed;
-            if (statusText != null) statusText.Text = message ?? string.Empty;
+            HideArchiveStatusControls();
+            if (statusText != null)
+            {
+                statusText.Text = message ?? string.Empty;
+                statusText.ToolTip = message ?? string.Empty;
+            }
         }
 
         private void UpdateStatus()
         {
             if (ShowArchiveActivityStatus()) return;
             if (ShowTransientStatusMessage()) return;
-            if (statusProgress != null) statusProgress.Visibility = Visibility.Collapsed;
+            HideArchiveStatusControls();
             TabState state = ActiveState;
-            if (state == null) { if (statusText != null) statusText.Text = "Ready"; return; }
+            if (state == null)
+            {
+                if (statusText != null) { statusText.Text = "Ready"; statusText.ToolTip = "Ready"; }
+                return;
+            }
             List<string> selected = GetSelectedPaths(state);
             string prefix = state.IsSearching ? state.Items.Count.ToString("N0") + " results" : state.Items.Count.ToString("N0") + " items";
             if (selected.Count > 0) prefix += "   •   " + selected.Count.ToString("N0") + " selected";
-            if (statusText != null) statusText.Text = prefix;
+            if (statusText != null) { statusText.Text = prefix; statusText.ToolTip = prefix; }
         }
 
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -2502,6 +2860,25 @@ namespace Ferry
 
         private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (archiveOperationActive)
+            {
+                ChoiceDialogResult answer = ChoiceDialog.ShowYesNo(
+                    this,
+                    "Archive operation in progress",
+                    "An archive operation is still running. Cancel it and close Ferry?",
+                    ChoiceDialogResult.No);
+                if (answer != ChoiceDialogResult.Yes)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
+                e.Cancel = true;
+                closeAfterArchiveCancellation = true;
+                CancelArchiveOperation();
+                return;
+            }
+
             CaptureColumnSettings(); if (WindowState == WindowState.Normal) { settings.WindowWidth = Width; settings.WindowHeight = Height; settings.WindowLeft = Left; settings.WindowTop = Top; } settings.WindowMaximized = WindowState == WindowState.Maximized; settings.SidebarWidth = mainGrid.ColumnDefinitions[0].ActualWidth > 0 ? mainGrid.ColumnDefinitions[0].ActualWidth : settings.SidebarWidth; settings.SearchMode = Convert.ToString(searchModeBox.SelectedItem); try { SettingsStore.Save(settings); } catch { }
             foreach (TabViewContext ctx in contexts.Values) { StopSearchDrain(ctx); CancelGridThumbnailLoad(ctx); ctx.State.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } }
         }

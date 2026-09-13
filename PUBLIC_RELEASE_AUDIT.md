@@ -1,70 +1,73 @@
-﻿# Ferry Public v1.0.1 — Release Audit
+# Ferry Public v1.0.2 — Release Audit
 
-**Audit date:** 2026-09-12  
-**Release status:** READY FOR PUBLICATION after final Windows binary build/package verification
+**Audit date:** 2026-09-13  
+**Release status:** READY FOR PUBLICATION after final Windows build/package/launch verification
 
-This document summarizes the v1.0.1 release audit and the Windows validation completed during the prototype/RC cycle. It is not a legal opinion.
+This document summarizes the v1.0.2 scope and validation completed through the accepted RC1. It is not a legal opinion.
 
 ## 1. Release scope
 
-Ferry v1.0.1 is a maintenance/usability release. The principal changes are:
+v1.0.2 changes one main product area: ZIP creation/extraction.
 
-- single-item inline rename and improved New Folder flow
-- full-width / half-width-insensitive filename search
-- drag-and-drop reordering for Pinned Sidebar folders
-- lightweight List-view Shell type icons; Grid thumbnails remain available
-- Sidebar width range 50–480 and tighter Sidebar/File-view boundary
-- About Ferry version/author/repository/license information
-- persistent ZIP compression/extraction activity feedback with brief completion messages
-
-`Open with…` default-app behavior is unchanged. Ferry still delegates archive work to Windows rather than owning an archive codec.
+- Ferry owns ZIP workflow/control using .NET `System.IO.Compression`.
+- Determinate progress, speed, ETA, Cancel, and non-blocking Ferry operation.
+- Ferry-owned extraction conflict handling including MERGE and KEEP BOTH.
+- Extraction safety validation, resource warnings, temporary-file finalization, and cancellation cleanup.
+- Existing v1.0.1 browsing/search/rename/selection/Shell behavior is retained.
+- Rubber-band/marquee selection remains out of scope for v1.0.2.
 
 ## 2. Dependency / source-origin audit
 
-- Project uses Windows/.NET Framework assemblies and WPF.
-- No NuGet package references are required by the build path.
+- Build remains C# / WPF / .NET Framework 4.8.
+- No NuGet package is required by the supported build path.
+- ZIP support uses framework assemblies `System.IO.Compression.dll` and `System.IO.Compression.FileSystem.dll`.
+- No 7-Zip/WinRAR/external archive command-line dependency is required for normal Ferry ZIP work.
+- Ferry does not implement Deflate from scratch.
 - No GNOME/Nautilus source code or GNOME artwork is bundled.
-- Nautilus is used as a UX reference only.
-- ZIP operations remain delegated to the Windows-provided archive tool.
 
 ## 3. Privacy / data behavior
 
-- Telemetry: none.
-- Automatic crash upload: none.
-- Debug logging: off by default.
-- Settings: local JSON in Ferry's portable folder.
-- No account system, cloud-sync subsystem, Ferry-owned search database, service, or tray process.
+Unchanged from v1.0.1:
+
+- no telemetry;
+- no automatic crash upload;
+- no account system;
+- settings stored in local portable JSON;
+- no Ferry-owned search database;
+- no always-running service/tray process.
 
 ## 4. Windows validation status
 
-The v1.0.1 prototype/RC cycle verified the new functionality on Windows, including:
+The accepted ZIP Integration Prototype 4 passed practical Windows regression and safety testing for normal compression/extraction, non-blocking Ferry operation, conflict handling, cancellation/cleanup, unsafe archive blocking, resource warnings, and safe close behavior.
 
-- Inline Rename / New Folder auto-scroll + inline rename: PASS
-- Full-width / half-width filename search: PASS
-- Pinned D&D reorder + persistent order: PASS
-- Sidebar width down to 50: PASS
-- Stable List type-icon display and Grid thumbnails: PASS
-- Multi-PDF `Enter` open after List-icon optimization: PASS
-- Sidebar/File-view boundary polish: PASS
-- About Ferry display/version: PASS
-- ZIP indeterminate progress across navigation: PASS
-- Neutral-gray archive progress style: PASS
-- ZIP completion message (~3 seconds): PASS
+The promoted v1.0.2-rc1 subsequently passed the complete Windows smoke test, including build, representative existing features, ZIP create/extract, conflict handling, Cancel, safety spot checks, safe close, Portable ZIP generation, fresh-folder launch, and restart.
 
-Existing v1.0.0 selection, multi-item Enter/D&D, F12, detailed Shell menu, external-update stable-tail behavior, and settings recovery remain retained.
+A detailed-context-menu extension initialization issue observed with **Open in Terminal** was reproduced in Windows Explorer after Explorer restart and classified as external to Ferry.
 
-## 5. Final packaging gate
+## 5. Final freeze rule
 
-The validated RC4 application logic is promoted to v1.0.1 final with **release/version metadata and public-documentation changes only**.
+The accepted v1.0.2-rc1 application logic is promoted to v1.0.2 final unchanged.
+
+Finalization changes are limited to:
+
+- `AssemblyInformationalVersion`;
+- release/packaging metadata;
+- README / specification release-baseline wording / release notes;
+- final release checklist, validation, and publication documentation.
+
+Any application-logic change requires a new validation cycle rather than silent inclusion in final.
+
+## 6. Final Windows packaging gate
 
 Before publishing on GitHub from Windows:
 
 1. Run `Build.cmd`.
-2. Launch `Portable\Ferry.exe` and confirm Settings → About Ferry shows `Version 1.0.1`.
-3. Run `Make-PortableRelease.cmd`.
-4. Confirm `dist\Ferry-v1.0.1-win-portable.zip` exists.
-5. Extract the ZIP into a fresh folder and launch `Ferry.exe`.
-6. Perform the short final checks in `FINAL_RELEASE_CHECKLIST_JA.md`.
-7. Commit/push the final source, create tag/release `v1.0.1`, and upload the portable ZIP.
+2. Confirm Settings → About Ferry shows `Version 1.0.2`.
+3. Perform one normal ZIP create and one normal ZIP extract.
+4. Run `Make-PortableRelease.cmd`.
+5. Confirm `dist\Ferry-v1.0.2-win-portable.zip` exists.
+6. Extract the ZIP into a fresh folder and launch `Ferry.exe`.
+7. Complete `FINAL_RELEASE_CHECKLIST_JA.md`.
+8. Publish tag/release `v1.0.2` with `RELEASE_NOTES_v1.0.2.md` and the portable ZIP asset.
 
 **Release decision:** READY, subject only to final Windows build/package/launch verification.

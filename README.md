@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.0.1  
+> **Current release:** v1.0.2  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.0.1 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.1-win-portable.zip)**
+**[Download Ferry v1.0.2 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.2-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -35,7 +35,7 @@ Ferry is deliberately small in scope. It does not try to become an all-in-one du
 - **Capable bulk rename** — find/replace and numbering templates with live preview
 - **Tabs** — lightweight tabbed browsing without session-management bloat
 - **Windows integration** — Recycle Bin, Shell context menu, Properties, shortcuts, thumbnails, drag & drop
-- **ZIP workflow** — Compress / Extract commands delegated to Windows 11
+- **ZIP workflow** — Ferry-owned ZIP create/extract with accurate progress, ETA, Cancel, conflict handling, and safety checks
 - **Portable settings** — small human-readable JSON, no private database, no telemetry
 
 ### A small convenience that matters: `F12`
@@ -54,7 +54,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.0.1-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.0.2-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -183,7 +183,18 @@ The lightweight context menu provides:
 - **Extract Here** for a selected ZIP
 - **Extract to `<archive-name>\`**
 
-Archive work is asynchronous and delegated to the Windows 11 archive tool. While compression/extraction is active, Ferry keeps a neutral indeterminate progress indicator visible in the bottom status bar even if you navigate elsewhere. On success, a completion message is shown briefly. Ferry contains no custom archive codec.
+Ferry owns the ZIP workflow and uses .NET `System.IO.Compression` for ZIP container/Deflate support; it no longer launches the Windows archive command-line tool for ZIP work. Ferry does not implement a compression codec from scratch.
+
+Archive work is asynchronous. After **Start**, the setup window closes and progress moves to Ferry's bottom status area while the rest of Ferry stays usable. Ferry shows one neutral-gray overall progress bar plus processed/total data, file count, speed, ETA when available, and **Cancel**.
+
+Extraction conflict choices are intentionally direct:
+
+- folder: **MERGE / KEEP BOTH / SKIP / CANCEL**
+- file: **REPLACE / KEEP BOTH / SKIP / CANCEL**
+- KEEP BOTH generates collision-safe names such as `Folder(1)` and `photo(1).jpg`
+- after a folder MERGE, the first file conflict can optionally apply the selected file choice to all remaining file conflicts under that merged folder only
+
+Before/during extraction, Ferry blocks unsafe archive paths/names and protects final filenames by writing through temporary files. Resource-heavy ZIPs are warned rather than automatically rejected; the user can continue or cancel. The current warning defaults are expanded data over 20 GiB, more than 50,000 files, or compression ratio over 100×.
 
 ## Open with Ferry in Explorer
 
@@ -268,7 +279,7 @@ Make-PortableRelease.cmd
 This creates:
 
 ```text
-dist\Ferry-v1.0.1-win-portable.zip
+dist\Ferry-v1.0.2-win-portable.zip
 ```
 
 ## Repository layout
@@ -283,7 +294,7 @@ Ferry/
 ├─ Make-PortableRelease.cmd      binary release ZIP builder
 ├─ Ferry_SPEC_v1.0.md            functional specification
 ├─ TEST_CHECKLIST.md             regression checklist
-├─ RELEASE_NOTES_v1.0.1.md       Current GitHub Release notes
+├─ RELEASE_NOTES_v1.0.2.md       Current release notes
 ├─ CHANGELOG.md
 ├─ LICENSE.txt
 ├─ README.md

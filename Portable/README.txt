@@ -1,4 +1,4 @@
-﻿Ferry v1.0.1 Portable
+﻿Ferry v1.0.2 Portable
 
 Ferry is a lightweight Windows 11 file manager inspired by the simplicity and workflow of GNOME Files (Nautilus).
 
@@ -9,6 +9,12 @@ Factory defaults:
 - Sort folders before files: On
 - Terminal: Auto (Windows Terminal -> Windows PowerShell -> Command Prompt)
 - F12: Open Terminal Here for the current Ferry folder
+
+ZIP archive workflow:
+- Ferry-owned ZIP create/extract workflow using .NET System.IO.Compression
+- Determinate progress, transfer speed, ETA, and Cancel in the bottom status area
+- Ferry remains usable while ZIP work runs
+- MERGE / KEEP BOTH / REPLACE / SKIP conflict handling as applicable
 
 Binary GitHub Release package:
 - Run Ferry.exe directly.

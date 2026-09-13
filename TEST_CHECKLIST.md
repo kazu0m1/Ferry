@@ -1,6 +1,6 @@
 ﻿# Ferry v1.0 Regression Checklist
 
-Use this checklist for future changes on the Ferry v1.x line. v1.0.0 passed the separate 19-item Windows smoke test recorded in `docs/FINAL_SMOKE_TEST_RESULT_JA.md`; v1.0.1 adds the targeted checks below.
+Use this checklist for future changes on the Ferry v1.x line. v1.0.0 passed the separate 19-item Windows smoke test recorded in `docs/FINAL_SMOKE_TEST_RESULT_JA.md`; v1.0.1 added the usability checks below, and v1.0.2 adds the Ferry-owned ZIP regression checks.
 
 ## Startup / navigation
 
@@ -79,9 +79,17 @@ Use this checklist for future changes on the Ferry v1.x line. v1.0.0 passed the 
 - [ ] Compress to ZIP works for one and multiple selected items.
 - [ ] Extract Here works.
 - [ ] Extract to `<name>\` works.
-- [ ] Archive work does not freeze Ferry.
-- [ ] Compression/extraction shows a neutral-gray indeterminate progress indicator that persists across navigation.
-- [ ] Successful archive completion displays the corresponding completion status for about 3 seconds.
+- [ ] Archive setup closes after Start and Ferry remains usable while the job runs.
+- [ ] Bottom status shows one neutral-gray determinate overall progress bar.
+- [ ] Processed/total data, file count, speed, ETA when available, and Cancel behave correctly.
+- [ ] Folder conflict offers MERGE / KEEP BOTH / SKIP / CANCEL.
+- [ ] File conflict offers REPLACE / KEEP BOTH / SKIP / CANCEL.
+- [ ] KEEP BOTH generates `Folder(1)` / `file(1).ext` and increments when needed.
+- [ ] MERGE-local “apply this choice to all remaining file conflicts under this merged folder” is scoped only to that merged folder.
+- [ ] Cancel does not leave incomplete output under a final filename.
+- [ ] Unsafe ZIP path/name test archives are blocked.
+- [ ] Resource warning allows explicit YES continue / NO cancel.
+- [ ] Closing Ferry during archive work safely cancels/cleans up before shutdown.
 
 ## External updates
 
