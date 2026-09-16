@@ -1,50 +1,57 @@
-﻿# Ferry v1.1.0 — Final Static Validation
+﻿# Ferry v1.1.1 — Final Static Validation
 
 **Date:** 2026-09-16  
-**Candidate:** `1.1.0` final  
-**Behavioral baseline:** v1.1.0 RC20 (Windows real-machine PASS)
+**Candidate:** `1.1.1` final  
+**Behavioral baseline:** v1.1.1 prototype 1 (Windows real-machine PASS)
 
-## Final application delta from RC20
+## Final application delta from prototype 1
 
-No application behavior was changed after the RC20 Windows PASS.
+No Paste/selection behavior was changed after the prototype 1 Windows PASS.
 
-Finalization changes are limited to:
+Application-source differences are limited to release metadata:
 
-1. Window title: `Ferry - RC 20` → `Ferry`.
-2. `AssemblyInformationalVersion`: `1.1.0-rc20` → `1.1.0`.
-3. `Make-PortableRelease.cmd`: `VERSION=1.1.0-rc20` → `VERSION=1.1.0`.
-4. Release documentation / screenshot gallery / final audit records.
+1. `MainWindow.cs`: `Ferry - prototype 1` → `Ferry`.
+2. `AssemblyInfo.cs`: informational version `1.1.1-prototype1` → `1.1.1`.
+3. `app.manifest`: assembly identity `1.1.0.0` → `1.1.1.0`.
 
-## Version metadata
+The Paste feedback implementation in `ClipboardHelper.cs` / `MainWindow.cs` is otherwise unchanged from the tested prototype.
 
-- `AssemblyVersion`: `1.1.0.0`
-- `AssemblyFileVersion`: `1.1.0.0`
-- `AssemblyInformationalVersion`: `1.1.0`
-- Main window title: `Ferry`
-- `Make-PortableRelease.cmd`: `VERSION=1.1.0`
-- Expected binary asset: `dist\Ferry-v1.1.0-win-portable.zip`
+## Static source checks
 
-## Frozen v1.1.0 interaction baseline
+- C# files under `Source/Ferry`: **29**.
+- C# files referenced by `Build.cmd`: **29**.
+- Build source coverage: **PASS** (sets match exactly).
+- Lexical `() / {} / []` delimiter balance across all 29 C# files after excluding comments/string/char literals: **PASS**.
+- No `Ferry.exe`, `dist/`, `bin/`, or `obj/` build output is included in the final source tree.
 
-- Explorer-style rubber-band selection in List / Grid.
-- Normal / Ctrl / Shift / Ctrl+Shift marquee semantics and D&D coexistence.
-- Edge autoscroll, Settings range 30–300, default 100.
-- Selection Anchor visualization.
-- List true-background geometry: left 10px gutter plus right-of-final-column tail.
-- List selection fill and Selection Anchor stop at the final visible data column.
-- List / Grid keyboard navigation after true-background clear, including Shift+Arrow recovery and Grid four-direction navigation.
-- List ⇄ Grid selection synchronization.
-- `Ctrl+L` / Breadcrumb interaction, 10px Breadcrumb horizontal scrollbar, 30×30 toolbar buttons.
-- Sidebar divider double-click auto-fit.
+## Version / publication metadata
+
+- Main window title: `Ferry`.
+- app manifest identity: `1.1.1.0`.
+- AssemblyVersion: `1.1.1.0`.
+- AssemblyFileVersion: `1.1.1.0`.
+- AssemblyInformationalVersion: `1.1.1`.
+- `Make-PortableRelease.cmd`: `VERSION=1.1.1`.
+- `Portable/README.txt`: `Ferry v1.1.1 Portable`.
+- Bug report template example: `v1.1.1`.
+- README / README.ja current release and direct download references: `v1.1.1`.
+- Expected binary asset: `dist\Ferry-v1.1.1-win-portable.zip`.
+
+## Frozen v1.1.1 behavior
+
+- Copy/Cut → Paste leaves the current operation's destination-level result items selected.
+- Paste result selection is mirrored across List/Grid and survives final incremental refresh.
+- Consecutive Paste operations replace the previous result selection rather than accumulating it.
+- Windows remains authoritative for Copy/Move/conflict handling; Ferry does not introduce a custom copy engine or conflict UI.
+- v1.1.0 rubber-band, Selection Anchor, true-background, keyboard navigation, D&D, autoscroll, Breadcrumb/Location Box and toolbar behavior remain inherited unchanged.
 
 ## Documentation / repository
 
-- README / README.ja current release and direct download references = v1.1.0.
-- Approved screenshot set copied under `docs/` and referenced by README / README.ja.
-- v1.0.x official release notes remain in repository root.
-- Prototype / RC evidence remains under `docs/dev-history/`.
-- Ubuntu Japanese community announcement remains prepared but publication is intentionally deferred.
+- `RELEASE_NOTES_v1.1.1.md` created.
+- `Ferry_SPEC_v1.1.md` updated to the v1.1.1 release baseline and Paste-result semantics.
+- Prototype 1 implementation and Windows validation records retained under `docs/dev-history/releases/v1.1.1/`.
+- v1.1.0 generic final audit/publication documents were archived under `docs/dev-history/releases/v1.1.0/` before the current documents were replaced.
 
 ## Build limitation
 
-This environment does not provide the Windows .NET Framework 4.8 WPF build/runtime environment. Compilation, launch validation, Portable binary creation, and final binary SHA-256 must be completed on Windows using `FINAL_RELEASE_CHECKLIST_JA.md`.
+This environment does not provide the Windows .NET Framework 4.8 WPF build/runtime environment. Compilation, launch validation, Portable binary creation, final functional spot checks, and final binary SHA-256 must be completed on Windows using `FINAL_RELEASE_CHECKLIST_JA.md`.

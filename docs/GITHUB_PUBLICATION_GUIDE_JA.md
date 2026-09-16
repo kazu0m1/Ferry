@@ -1,28 +1,26 @@
-# Ferry v1.1.0 GitHub正式リリース手順
+﻿# Ferry v1.1.1 GitHub正式リリース手順
 
 対象Repository: `kazu0m1/Ferry`  
-正式版: `v1.1.0`
-
-この文書は**現行版の公開手順**です。v1.0.xの公開手順は履歴資料として別文書に残します。
+正式版: `v1.1.1`
 
 ## 1. 最終Sourceをmainへ反映
 
-GitHub DesktopまたはGitで差分を確認し、次を確認します。
+GitHub Desktopで差分を確認し、次を確認する。
 
-- Window titleが`Ferry`
-- `AssemblyInformationalVersion`が`1.1.0`
-- `Make-PortableRelease.cmd`の`VERSION=1.1.0`
-- RC用文書がRepository rootではなく`docs/dev-history/releases/v1.1.0/`へ整理されている
-- `Portable/README.txt`の先頭が`Ferry v1.1.0 Portable`
-- Bug report templateのVersion例が`v1.1.0`
+- Window title = `Ferry`
+- `AssemblyInformationalVersion` = `1.1.1`
+- `Make-PortableRelease.cmd` = `VERSION=1.1.1`
+- `Portable/README.txt`先頭 = `Ferry v1.1.1 Portable`
+- Bug report templateのVersion例 = `v1.1.1`
+- v1.1.1 prototype資料 = `docs/dev-history/releases/v1.1.1/`
 
 Commit例:
 
 ```text
-Release Ferry v1.1.0
+Release Ferry v1.1.1
 ```
 
-その後、`main`へpushします。
+commit後、`main`へpushする。
 
 ## 2. Windowsで最終ビルド
 
@@ -32,87 +30,53 @@ Repository rootで、
 Build.cmd
 ```
 
-を実行します。
+を実行し、`Portable\Ferry.exe`生成、Window title = `Ferry`、About/version = `1.1.1`を確認する。詳細は`FINAL_RELEASE_CHECKLIST_JA.md`に従う。
 
-最低限、次を確認します。
-
-- `Portable\Ferry.exe`が生成される
-- 起動できる
-- Window titleが`Ferry`
-- Settings / AboutのVersionが`1.1.0`
-
-詳細はRepository rootの`FINAL_RELEASE_CHECKLIST_JA.md`に従います。
-
-## 3. GitHub Release用Portable ZIPを生成
+## 3. Portable ZIP生成
 
 ```text
 Make-PortableRelease.cmd
 ```
 
-成功すると、
+生成物:
 
 ```text
-dist\Ferry-v1.1.0-win-portable.zip
+dist\Ferry-v1.1.1-win-portable.zip
 ```
 
-が生成され、SHA-256がコンソールに表示されます。
+## 4. fresh folder確認
 
-## 4. 生成ZIPをfresh folderで確認
+生成ZIPを別の新しいfolderへ展開して起動し、最低限以下を確認する。
 
-生成したZIPを、ビルド元とは別の新しいフォルダーへ展開して`Ferry.exe`を起動します。
+- About = `1.1.1`
+- Copy/Cut → Paste結果が選択状態で残る
+- 連続2回Pasteで2回目の結果だけが選択される
+- List / Grid切替後もPaste結果selectionを維持する
+- rubber-band / D&D / keyboard selectionに重大回帰がない
 
-最低限、次を確認します。
+## 5. SHA-256保存
 
-- Ferryが起動する
-- Homeが開く
-- Aboutが`1.1.0`
-- List / Gridが切り替わる
-- Rubber-band selectionが動く
-- `Ctrl+L` → `Esc`でBreadcrumbへ戻る
-- Settingsが開く
-- 既存v1.0.2系`settings.json`を使っても起動でき、Rubber-band autoscroll speedの欠損値が100になる
-
-## 5. 最終SHA-256を保存
-
-`Make-PortableRelease.cmd`が表示したSHA-256を、Release本文またはRelease作業メモへ保存します。
-
-必要ならPowerShellでも再確認できます。
+`Make-PortableRelease.cmd`が表示したSHA-256を保存する。必要ならPowerShellでも確認できる。
 
 ```powershell
-Get-FileHash -Algorithm SHA256 .\dist\Ferry-v1.1.0-win-portable.zip
+Get-FileHash -Algorithm SHA256 .\dist\Ferry-v1.1.1-win-portable.zip
 ```
 
-## 6. Tag / Releaseを作成
+## 6. Tag / Release
 
-GitHub Repository → **Releases** → **Create a new release**。
-
-- Tag: `v1.1.0`
-- Target: 最終Sourceを含む`main`のcommit
-- Release title: `Ferry v1.1.0`
-- Description: `RELEASE_NOTES_v1.1.0.md`を使用
-- Asset: `Ferry-v1.1.0-win-portable.zip`
+- Tag: `v1.1.1`
+- Target: final sourceのexact commit
+- Release title: `Ferry v1.1.1`
+- Description: `RELEASE_NOTES_v1.1.1.md`
+- Asset: `Ferry-v1.1.1-win-portable.zip`
 - Pre-release: **OFF**
-- Latest release: **ON / 通常の正式Releaseとして公開**
 
-Release本文末尾にSHA-256を追記しても構いません。
+## 7. 公開直後
 
-## 7. 公開直後の確認
+- README Current release = `v1.1.1`
+- README直接Download linkからassetを取得できる
+- fresh downloadを展開・起動できる
+- About = `1.1.1`
+- IssuesのBug report templateに`v1.1.1`が表示される
 
-- READMEトップのCurrent releaseが`v1.1.0`
-- READMEの直接Downloadリンクが開く
-- `Ferry-v1.1.0-win-portable.zip`を取得できる
-- Tag / Release title / Aboutがすべて`v1.1.0`
-- Release ZIPをfresh folderへ展開して起動できる
-- IssuesのBug report templateに`v1.1.0`が表示される
-- Source treeのrootにRC資料が散らばっていない
-
-## 8. 任意の公開品質項目
-
-以下はv1.1.0公開の必須条件ではありません。
-
-- Windows code signing certificateで`Ferry.exe`へ署名するか
-- READMEのメインスクリーンショットをv1.1.0完成画面へ差し替えるか
-- Ubuntu日本語コミュニティ等へ紹介するか
-- winget等のpackage manager登録を後続Versionで行うか
-
-署名しない場合でもFerryは公開できますが、未知のpublisherとしてWindows側の警告が出る可能性があります。
+以上がPASSしたらFerry v1.1.1公開完了。

@@ -2866,6 +2866,8 @@ namespace Ferry
             {
                 if (reconcileContext != null) reconcileContext.IsReconciling = false;
             }
+
+            if (reconcileContext != null) ApplyPasteFeedbackSelection(state, reconcileContext);
         }
 
         private bool BasicItemChanged(FileItem oldItem, FileItem newItem)
@@ -3704,18 +3706,211 @@ namespace Ferry
 
         private void Paste(TabState state)
         {
-            if (state == null || state.IsRecycleBin) return;
+            if (state == null || state.IsRecycleBin || !contexts.ContainsKey(state.Id)) return;
+            TabViewContext ctx = contexts[state.Id];
+            PasteFeedbackSession feedback = null;
             try
             {
                 InvalidateRenameUndo();
+                List<string> sourcePaths = ClipboardHelper.GetPasteSourcePaths();
+                feedback = BeginPasteFeedback(state.CurrentPath, sourcePaths);
+                ctx.PasteFeedback = feedback;
+
                 bool completed = ClipboardHelper.Paste(state.CurrentPath);
-                if (completed) ScheduleFolderRefresh(state);
+                if (feedback != null)
+                {
+                    feedback.OperationCompleted = completed;
+                    feedback.OperationFinished = true;
+                }
+
+                // SHFileOperation is synchronous, but its progress UI may pump Windows messages.
+                // Keeping the feedback session active while the operation runs lets any watcher-
+                // driven incremental refresh select arriving top-level items progressively.  The
+                // explicit final refresh below then leaves the complete paste result selected.
+                if (completed || feedback != null) ScheduleFolderRefresh(state);
             }
             catch (Exception ex)
             {
+                if (feedback != null) feedback.OperationFinished = true;
                 Logger.Write("Paste failed: " + ex);
                 MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+                ScheduleFolderRefresh(state);
             }
+        }
+
+        private PasteFeedbackSession BeginPasteFeedback(string destination, IList<string> sourcePaths)
+        {
+            if (string.IsNullOrEmpty(destination) || sourcePaths == null || sourcePaths.Count == 0) return null;
+            PasteFeedbackSession session = new PasteFeedbackSession();
+            session.Destination = destination;
+            session.SourcePaths = new List<string>(sourcePaths);
+            session.SourceDirectoryPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < sourcePaths.Count; i++)
+            {
+                try { if (Directory.Exists(sourcePaths[i])) session.SourceDirectoryPaths.Add(sourcePaths[i]); } catch { }
+            }
+            session.Before = SnapshotTopLevelEntries(destination);
+            return session;
+        }
+
+        private Dictionary<string, PasteEntryStamp> SnapshotTopLevelEntries(string directory)
+        {
+            Dictionary<string, PasteEntryStamp> result = new Dictionary<string, PasteEntryStamp>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                foreach (string path in Directory.EnumerateFileSystemEntries(directory))
+                {
+                    PasteEntryStamp stamp = CapturePasteEntryStamp(path);
+                    if (stamp != null) result[path] = stamp;
+                }
+            }
+            catch { }
+            return result;
+        }
+
+        private PasteEntryStamp CapturePasteEntryStamp(string path)
+        {
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    DirectoryInfo info = new DirectoryInfo(path);
+                    return new PasteEntryStamp { IsDirectory = true, Length = 0, LastWriteUtcTicks = info.LastWriteTimeUtc.Ticks, CreationUtcTicks = info.CreationTimeUtc.Ticks };
+                }
+                if (File.Exists(path))
+                {
+                    FileInfo info = new FileInfo(path);
+                    return new PasteEntryStamp { IsDirectory = false, Length = info.Length, LastWriteUtcTicks = info.LastWriteTimeUtc.Ticks, CreationUtcTicks = info.CreationTimeUtc.Ticks };
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private bool PasteEntryChanged(PasteEntryStamp before, string currentPath)
+        {
+            if (before == null) return true;
+            PasteEntryStamp after = CapturePasteEntryStamp(currentPath);
+            if (after == null) return false;
+            return before.IsDirectory != after.IsDirectory ||
+                   before.Length != after.Length ||
+                   before.LastWriteUtcTicks != after.LastWriteUtcTicks ||
+                   before.CreationUtcTicks != after.CreationUtcTicks;
+        }
+
+        private bool IsLikelyRenamedPasteResult(string candidatePath, string sourcePath, bool sourceIsDirectory)
+        {
+            try
+            {
+                string candidateName = Path.GetFileName(candidatePath);
+                string sourceName = Path.GetFileName(sourcePath);
+                if (string.IsNullOrEmpty(candidateName) || string.IsNullOrEmpty(sourceName)) return false;
+
+                if (sourceIsDirectory)
+                    return candidateName.StartsWith(sourceName, StringComparison.OrdinalIgnoreCase);
+
+                string sourceExtension = Path.GetExtension(sourceName);
+                string candidateExtension = Path.GetExtension(candidateName);
+                if (!string.Equals(sourceExtension, candidateExtension, StringComparison.OrdinalIgnoreCase)) return false;
+                string sourceStem = Path.GetFileNameWithoutExtension(sourceName);
+                string candidateStem = Path.GetFileNameWithoutExtension(candidateName);
+                return candidateStem.StartsWith(sourceStem, StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
+        }
+
+        private void ApplyPasteFeedbackSelection(TabState state, TabViewContext ctx)
+        {
+            if (state == null || ctx == null || ctx.PasteFeedback == null) return;
+            PasteFeedbackSession session = ctx.PasteFeedback;
+            if (!string.Equals(state.CurrentPath, session.Destination, StringComparison.OrdinalIgnoreCase))
+            {
+                ctx.PasteFeedback = null;
+                return;
+            }
+
+            HashSet<string> displayedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, FileItem> byPath = new Dictionary<string, FileItem>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < state.Items.Count; i++)
+            {
+                FileItem item = state.Items[i];
+                if (item == null || string.IsNullOrEmpty(item.FullPath)) continue;
+                displayedPaths.Add(item.FullPath);
+                byPath[item.FullPath] = item;
+            }
+
+            HashSet<string> resultPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < session.SourcePaths.Count; i++)
+            {
+                string source = session.SourcePaths[i];
+                string name = null;
+                try { name = Path.GetFileName(source.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)); } catch { }
+                if (string.IsNullOrEmpty(name)) continue;
+                string expected = Path.Combine(session.Destination, name);
+
+                PasteEntryStamp oldStamp;
+                bool existedBefore = session.Before.TryGetValue(expected, out oldStamp);
+                bool sameSourceAndDestination = string.Equals(source, expected, StringComparison.OrdinalIgnoreCase);
+                if (displayedPaths.Contains(expected))
+                {
+                    if (!existedBefore ||
+                        (!sameSourceAndDestination && PasteEntryChanged(oldStamp, expected)) ||
+                        (!File.Exists(source) && !Directory.Exists(source)) ||
+                        (session.OperationFinished && session.OperationCompleted && !sameSourceAndDestination))
+                        resultPaths.Add(expected);
+                }
+
+                // Same-folder Copy and Windows Keep-both/conflict-renaming create a new sibling
+                // whose basename retains the original stem/name.  Limit the fallback to entries
+                // that did not exist before the Paste so unrelated pre-existing items are never
+                // pulled into the operation-result selection.
+                foreach (string candidate in displayedPaths)
+                {
+                    if (session.Before.ContainsKey(candidate) || resultPaths.Contains(candidate)) continue;
+                    bool sourceIsDirectory = session.SourceDirectoryPaths != null && session.SourceDirectoryPaths.Contains(source);
+                    if (IsLikelyRenamedPasteResult(candidate, source, sourceIsDirectory)) resultPaths.Add(candidate);
+                }
+            }
+
+            HashSet<FileItem> desired = new HashSet<FileItem>();
+            foreach (string path in resultPaths)
+            {
+                FileItem item;
+                if (byPath.TryGetValue(path, out item)) desired.Add(item);
+            }
+
+            if (desired.Count > 0)
+            {
+                ReconcileSelectorSelection(ctx, ctx.ListView, desired);
+                ReconcileSelectorSelection(ctx, ctx.GridView, desired);
+
+                FileItem anchor = null;
+                ICollectionView view = CollectionViewSource.GetDefaultView(state.Items);
+                foreach (object obj in view)
+                {
+                    FileItem item = obj as FileItem;
+                    if (item != null && desired.Contains(item)) { anchor = item; break; }
+                }
+                if (anchor != null)
+                {
+                    ctx.SelectionAnchorItem = anchor;
+                    ctx.KeyboardNavigationItem = anchor;
+                    SetExtendedSelectionAnchorOnly(ctx.ListView, anchor);
+                    SetExtendedSelectionAnchorOnly(ctx.GridView, anchor);
+                    Selector visible = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase) ? (Selector)ctx.GridView : (Selector)ctx.ListView;
+                    ListView lv = visible as ListView;
+                    if (lv != null) lv.ScrollIntoView(anchor);
+                    ListBox lb = visible as ListBox;
+                    if (lb != null) lb.ScrollIntoView(anchor);
+                    UpdateSelectionAnchorVisual(ctx);
+                }
+                UpdateStatus();
+            }
+
+            // Once SHFileOperation has returned, this reconciliation is the authoritative final
+            // result.  Clearing the bounded session prevents a later unrelated watcher refresh
+            // from resurrecting an old Paste selection.
+            if (session.OperationFinished) ctx.PasteFeedback = null;
         }
 
         private void CreateNewFolder(TabState state)
@@ -4759,9 +4954,28 @@ namespace Ferry
             }
         }
 
+        private sealed class PasteEntryStamp
+        {
+            public bool IsDirectory;
+            public long Length;
+            public long LastWriteUtcTicks;
+            public long CreationUtcTicks;
+        }
+
+        private sealed class PasteFeedbackSession
+        {
+            public string Destination;
+            public List<string> SourcePaths;
+            public HashSet<string> SourceDirectoryPaths;
+            public Dictionary<string, PasteEntryStamp> Before;
+            public bool OperationFinished;
+            public bool OperationCompleted;
+        }
+
         private sealed class TabViewContext
         {
             public TabState State; public TabItem TabItem; public Grid Container; public ListView ListView; public ListBox GridView; public GridView ListGrid; public FileSystemWatcher Watcher; public DispatcherTimer RefreshTimer; public DispatcherTimer SearchDrainTimer; public CancellationTokenSource GridThumbnailCancellation;
+            public PasteFeedbackSession PasteFeedback;
             public bool IsReconciling;
             public List<FileItem> PreSearchItems; public HashSet<string> PreSearchSelection;
             public Control DropTargetContainer; public object DropTargetBackgroundLocal = DependencyProperty.UnsetValue; public object DropTargetBorderBrushLocal = DependencyProperty.UnsetValue; public object DropTargetBorderThicknessLocal = DependencyProperty.UnsetValue;

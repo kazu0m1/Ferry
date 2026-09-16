@@ -1,6 +1,6 @@
 ﻿# Ferry Specification v1.1
 
-**Release baseline:** Ferry v1.1.0  
+**Release baseline:** Ferry v1.1.1  
 **Platform:** Windows 11 / .NET Framework 4.8 / WPF  
 **Status:** Final release baseline
 
@@ -53,8 +53,17 @@ This document defines the v1.1 additions and behavioral changes relative to the 
 - `Ctrl+A` remains effectively immediate in the tested environment.
 - Very large Shift-range selection is a known performance characteristic rather than a correctness failure; approximately 10 seconds for a 10,000-item end-to-end Shift range was observed after restart in testing.
 
-## 7. Release relationship
+## 7. Paste result feedback
+
+- After a successful Copy/Cut → Paste, Ferry selects the destination-level items associated with the current Paste so the user can immediately identify what was pasted.
+- Selection targets are limited to the destination folder's top-level items; Ferry does not recursively select descendants.
+- Paste result selection is synchronized between List and Grid and remains after the final incremental refresh.
+- Each Paste operation owns a bounded per-tab feedback session. A later Paste replaces the previous operation result selection rather than accumulating stale items.
+- Windows `SHFileOperation` remains authoritative for Copy/Move execution and conflict UI. Ferry does not add a custom copy engine or custom same-folder duplicate naming policy.
+- If Windows skips or cancels a conflict and no destination item is produced/updated by that operation, Ferry must not invent a pasted result.
+
+## 8. Release relationship
 
 - `Ferry_SPEC_v1.0.md` remains the historical v1.0/v1.0.2 baseline and is not rewritten.
-- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.0 behavior.
+- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.1 behavior.
 - Historical Prototype and RC records are retained as development evidence and are not normative for later releases.

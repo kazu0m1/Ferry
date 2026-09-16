@@ -1,72 +1,64 @@
-﻿# Ferry v1.1.0 正式リリースチェックリスト
+﻿# Ferry v1.1.1 正式リリースチェックリスト
 
-RC20でWindows実機テストがオールクリアとなった挙動をv1.1.0仕様として凍結した。final化ではアプリケーション挙動を変更せず、version/titleと公開物だけを正式版へ切り替える。
+prototype 1でWindows実機テストがPASSしたPaste result feedbackをv1.1.1仕様として凍結した。final化ではアプリケーション挙動を変更せず、version/titleと公開物だけを正式版へ切り替える。
 
 ## A. Source / version
 
 - [ ] `Build.cmd` 成功
 - [ ] Window title = `Ferry`
-- [ ] AssemblyVersion / FileVersion = `1.1.0.0`
-- [ ] InformationalVersion = `1.1.0`
-- [ ] `Make-PortableRelease.cmd` VERSION = `1.1.0`
+- [ ] AssemblyVersion / FileVersion = `1.1.1.0`
+- [ ] InformationalVersion = `1.1.1`
+- [ ] `Make-PortableRelease.cmd` VERSION = `1.1.1`
 
-## B. Final UI spot check
+## B. v1.1.1 Paste result final spot check
 
-- [ ] List左10px gutterが他headerと同色
-- [ ] List選択色 / Selection Anchorが最右data columnで止まる
-- [ ] List左gutter / 右側tailがtrue backgroundとして機能
-- [ ] Breadcrumb horizontal scrollbarは10px、thumb / end buttonは直角
-- [ ] Back / Forward / Up / Home等は30×30
-- [ ] `Ctrl+L` → `Esc` / 再`Ctrl+L` / file-view clickでBreadcrumbへ戻る
+- [ ] 複数itemをCopy → 別folderへPasteし、今回Pasteしたトップレベルitemだけが選択される
+- [ ] 既存itemへの上書き／folder merge後も、今回のdestination itemが選択される
+- [ ] `Ctrl+X` → `Ctrl+V`でも移動先itemが選択される
+- [ ] Paste後のtrue-background clickでselectionを解除できる
+- [ ] Paste後にList ⇄ Gridを切り替えても同じselection setを維持する
+- [ ] 連続2回Pasteすると2回目の結果だけが選択される
+- [ ] 同一folder conflictはWindows標準UIへ委譲され、Skip/Cancel時にFerry独自のduplicateを生成しない
 
-## C. Selection / keyboard smoke
+## C. v1.1.0回帰スモーク
 
-- [ ] List通常rubber-band
-- [ ] Grid通常rubber-band
-- [ ] List: `A → true background → ↓ = B`
-- [ ] List: `A → true background → Shift+↓ = A/B`
-- [ ] Grid: 4方向Arrowが視覚方向どおり移動
-- [ ] Grid: true-background clear後も4方向Arrowが正常
+- [ ] List / Grid通常rubber-band
+- [ ] Ctrl / Shift / Ctrl+Shift selection
+- [ ] true-background clear後のArrow / Shift+Arrow
 - [ ] Selection Anchor表示
 - [ ] 選択済みitem D&D
 - [ ] List / Grid autoscroll
-- [ ] List ⇄ Gridで選択集合維持
+- [ ] List ⇄ Gridでselection set維持
+- [ ] Breadcrumb / `Ctrl+L` / toolbarの主要操作
 
-## D. Settings compatibility
+## D. Repository / documentation hygiene
 
-- [ ] Rubber-band autoscroll speed = 30–300、default 100
-- [ ] 設定保存・再起動後も値維持
-- [ ] v1.0.2系の既存`settings.json`でも起動し、欠損autoscroll値は100
-
-## E. Repository / documentation hygiene
-
-- [x] `Portable/README.txt` = `Ferry v1.1.0 Portable`
-- [x] Bug report templateのVersion例 = `v1.1.0`
-- [x] v1.1.0 RC資料 = `docs/dev-history/releases/v1.1.0/`
-- [x] `docs/dev-history/`を公開repositoryへ残す方針
-- [x] v1.0.0〜v1.0.2 Release Notesをrootへ残す方針
-- [x] v1.1.0はcode signingなしで公開する方針
-- [x] Ubuntu日本語コミュニティへの紹介は今回保留
-- [x] 現在の承認済みスクリーンショットをREADMEへ採用
+- [x] `Portable/README.txt` = `Ferry v1.1.1 Portable`
+- [x] Bug report templateのVersion例 = `v1.1.1`
+- [x] prototype 1実装・テスト資料 = `docs/dev-history/releases/v1.1.1/`
+- [x] `CHANGELOG.md`へv1.1.1を記録
+- [x] `RELEASE_NOTES_v1.1.1.md`を作成
+- [x] README / README.jaのcurrent release / direct downloadをv1.1.1へ更新
 - [x] Source package静的監査実施
+- [x] v1.1.1はcode signingなしで公開する方針
 
-## F. Release artifact
+## E. Release artifact
 
 - [ ] `Make-PortableRelease.cmd` 実行
-- [ ] `dist\Ferry-v1.1.0-win-portable.zip` 生成
+- [ ] `dist\Ferry-v1.1.1-win-portable.zip` 生成
 - [ ] fresh folderへ展開して起動
-- [ ] About/version = `1.1.0`
+- [ ] About/version = `1.1.1`
 - [ ] 最終Portable ZIPのSHA-256を保存
 
-## G. GitHub
+## F. GitHub
 
 - [ ] final sourceをcommit
-- [ ] そのexact commitへTag `v1.1.0`
-- [ ] Release title: `Ferry v1.1.0`
-- [ ] Release本文: `RELEASE_NOTES_v1.1.0.md`
-- [ ] Asset: `Ferry-v1.1.0-win-portable.zip`
+- [ ] そのexact commitへTag `v1.1.1`
+- [ ] Release title: `Ferry v1.1.1`
+- [ ] Release本文: `RELEASE_NOTES_v1.1.1.md`
+- [ ] Asset: `Ferry-v1.1.1-win-portable.zip`
 - [ ] Pre-release = OFF
 - [ ] 公開後READMEの直接Download linkからassetを再取得
 - [ ] fresh downloadを展開・起動して最終確認
 
-A〜Gの必須項目PASSで **Ferry v1.1.0 = RELEASED**。
+A〜Fの必須項目PASSで **Ferry v1.1.1 = RELEASED**。

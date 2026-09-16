@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
@@ -25,6 +25,18 @@ namespace Ferry
         public static bool CanPaste()
         {
             return Clipboard.ContainsFileDropList();
+        }
+
+        public static List<string> GetPasteSourcePaths()
+        {
+            List<string> paths = new List<string>();
+            if (!Clipboard.ContainsFileDropList()) return paths;
+            StringCollection files = Clipboard.GetFileDropList();
+            for (int i = 0; i < files.Count; i++)
+            {
+                if (!string.IsNullOrEmpty(files[i])) paths.Add(files[i]);
+            }
+            return paths;
         }
 
         public static bool Paste(string destination)

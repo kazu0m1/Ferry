@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.1.0  
+> **現在のリリース:** v1.1.1  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.1.0 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.0-win-portable.zip)**
+**[Ferry v1.1.1 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.1-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -49,6 +49,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 - **強力な一括リネーム** — 置換・連番・開始番号指定・ライブプレビュー
 - **タブ** — 必要十分なタブブラウジング
 - **Windowsとの自然な統合** — ごみ箱、プロパティ、詳細Shellメニュー、ショートカット、D&D
+- **Paste結果の可視化** — Copy/Cut → Paste後、今回貼り付けたdestination項目が選択状態で残り、何を貼り付けたかすぐ分かる
 - **ZIP圧縮・展開** — Ferry側で進捗・ETA・Cancel・競合処理・安全確認まで管理
 - **Portable** — 設定は小さなJSON。独自DBもテレメトリもありません
 
@@ -62,7 +63,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.1.0-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.1.1-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -77,7 +78,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.1.0の初期設定
+## v1.1.1の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -115,6 +116,7 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 - 外部から新規追加されたアイテムは末尾に留まり、`F5`やカラムクリックなどユーザーが明示したときに再ソート
 - ダウンロード中の`.crdownload`などは位置を動かさずSize/Modifiedを更新
 - `F12`で、選択状態に関係なく現在フォルダーにTerminalを開く
+- Copy/Cut → Paste後、今回のトップレベルdestination項目を選択状態で残す。次のPasteでは前回結果を引き継がず、今回の結果だけを選択
 
 - Explorerライクなラバーバンド（矩形）範囲選択（List / Grid、Ctrl / Shift / Ctrl+Shift、画面端autoscroll対応）
 - Selection Anchorを破線で可視化
@@ -265,7 +267,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.1.0-win-portable.zip
+dist\Ferry-v1.1.1-win-portable.zip
 ```
 
 です。

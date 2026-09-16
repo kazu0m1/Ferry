@@ -1,5 +1,20 @@
 ﻿# Ferry Changelog
 
+## [1.1.1] - 2026-09-16
+
+### Added
+- Explorer-style Paste result feedback: top-level items created or updated by the current Copy/Cut → Paste operation are selected in the destination view so users can immediately see what was pasted.
+- Paste result selection is mirrored between List and Grid and retained after the final incremental refresh.
+- A bounded per-tab Paste feedback session tracks only the current operation; a later Paste replaces the previous result selection instead of accumulating stale results.
+
+### Validated
+- v1.1.1 prototype 1 passed Windows real-machine testing for Copy/Paste, overwrite/merge cases, Cut/Paste, List/Grid synchronization, selection clearing, selection/D&D regression, and consecutive Paste operations.
+- Same-folder Paste follows Windows standard conflict handling; in the tested environment Windows presented its conflict dialog and the operation was skipped/cancelled rather than generating a Ferry-owned duplicate name.
+
+### Preserved
+- Windows `SHFileOperation` remains the authority for Copy/Move/conflict handling; Ferry does not introduce a custom copy engine.
+- v1.1.0 rubber-band, Selection Anchor, keyboard navigation, true-background, D&D and incremental-refresh behavior are otherwise unchanged.
+
 ## [1.1.0] - 2026-09-16
 
 ### Released

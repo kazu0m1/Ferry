@@ -1,8 +1,13 @@
-﻿Ferry v1.1.0 Portable
+﻿Ferry v1.1.1 Portable
 
 Ferry is a lightweight Windows 11 file manager inspired by the simplicity and workflow of GNOME Files (Nautilus).
 
-Highlights in v1.1.0:
+Highlights in v1.1.1:
+- Explorer-style Paste result feedback: top-level items created/updated by the current Paste become selected
+- Selection is mirrored across List/Grid and remains after Paste completes
+- Windows continues to own the actual Copy/Cut/Paste operation and conflict UI
+
+Also includes the validated v1.1.0 baseline:
 - Explorer-style rubber-band selection in List and Grid views
 - Ctrl / Shift / Ctrl+Shift selection behavior with a visible Selection Anchor
 - Edge autoscroll for rubber-band selection, configurable from 30 to 300
