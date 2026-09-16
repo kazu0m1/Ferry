@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -215,7 +216,7 @@ namespace Ferry
             {
                 try { archiveCancellation.Dispose(); } catch { }
             }
-            archiveCancellation = new System.Threading.CancellationTokenSource();
+            archiveCancellation = new CancellationTokenSource();
             archiveOperationActive = true;
             archiveOperationLabel = string.IsNullOrEmpty(label) ? "Archive operation" : label;
             archiveProgressInfo = new ArchiveProgressInfo { Phase = ArchivePhase.Scanning, CurrentItem = "Preparing..." };
