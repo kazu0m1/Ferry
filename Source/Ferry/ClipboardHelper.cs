@@ -9,6 +9,7 @@ namespace Ferry
     internal static class ClipboardHelper
     {
         private const string PreferredDropEffect = "Preferred DropEffect";
+        private const string PerformedDropEffect = "Performed DropEffect";
 
         public static void Copy(IList<string> paths, bool cut)
         {
@@ -52,6 +53,23 @@ namespace Ferry
                 try { Clipboard.Clear(); } catch { }
             }
             return completed;
+        }
+
+        public static bool WasUnoptimizedMovePerformed(IDataObject data)
+        {
+            try
+            {
+                if (data == null || !data.GetDataPresent(PerformedDropEffect, false)) return false;
+                Stream stream = data.GetData(PerformedDropEffect, false) as Stream;
+                if (stream == null || !stream.CanRead) return false;
+                byte[] bytes = new byte[4];
+                if (stream.CanSeek) stream.Position = 0;
+                int read = stream.Read(bytes, 0, bytes.Length);
+                if (read < bytes.Length) return false;
+                int value = BitConverter.ToInt32(bytes, 0);
+                return (value & (int)DragDropEffects.Move) == (int)DragDropEffects.Move;
+            }
+            catch { return false; }
         }
 
         private static bool IsCutOperation()

@@ -1,5 +1,19 @@
 ﻿# Ferry Changelog
 
+## [1.1.2] - 2026-09-16
+
+### Fixed
+- Ferry → Windows Explorer の同一ドライブ通常D&Dで、Explorer側へitemが作成されてもFerry側sourceが残り、結果がCopyのようになる場合を修正。
+- External D&D終了時にWPFのfinal drop effectとWindows Shellの`Performed DropEffect`を確認し、両方がMoveを示すunoptimized MOVEの場合だけsource cleanupを行う。
+- optimized MOVEでsourceが既に消えている場合は追加削除しない。
+
+### Validated
+- v1.1.2 prototype 1はWindows実機で、同一ドライブMove、`Ctrl+D&D` Copy、Cancel、folder、複数item、Ferry→Ferry、Explorer→Ferry、Paste-result feedback、Selection最小回帰をPASS。
+- 別volumeへのD&Dはテスト環境に第二ドライブがないため未実施。prototype checklist上の任意項目として未検証を明記する。
+
+### Preserved
+- Ferry→Ferry internal D&D、Explorer→Ferry D&D、v1.1.1 Paste result feedback、v1.1.0 Selection Engine / rubber-band / Selection Anchor / autoscrollには変更なし。
+
 ## [1.1.1] - 2026-09-16
 
 ### Added

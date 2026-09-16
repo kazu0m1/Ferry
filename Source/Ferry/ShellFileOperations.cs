@@ -55,6 +55,14 @@ namespace Ferry
             return Execute(FO_DELETE, paths, null, FOF_WANTNUKEWARNING);
         }
 
+        public static bool DeleteAfterExternalMove(IList<string> paths)
+        {
+            // The destination already completed the data transfer and explicitly reported an
+            // unoptimized MOVE.  This is source cleanup, not a user-requested standalone Delete,
+            // so do not send the originals to Recycle Bin and do not ask for a second confirmation.
+            return Execute(FO_DELETE, paths, null, FOF_NOCONFIRMATION | FOF_NOCONFIRMMKDIR);
+        }
+
         private static bool Execute(uint operation, IList<string> paths, string destination, ushort flags)
         {
             if (paths == null || paths.Count == 0) return true;

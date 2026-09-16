@@ -1,6 +1,6 @@
 ﻿# Ferry Specification v1.1
 
-**Release baseline:** Ferry v1.1.1  
+**Release baseline:** Ferry v1.1.2  
 **Platform:** Windows 11 / .NET Framework 4.8 / WPF  
 **Status:** Final release baseline
 
@@ -62,8 +62,18 @@ This document defines the v1.1 additions and behavioral changes relative to the 
 - Windows `SHFileOperation` remains authoritative for Copy/Move execution and conflict UI. Ferry does not add a custom copy engine or custom same-folder duplicate naming policy.
 - If Windows skips or cancels a conflict and no destination item is produced/updated by that operation, Ferry must not invent a pasted result.
 
-## 8. Release relationship
+## 8. External Windows Explorer D&D Move completion
+
+- Ferry shall interoperate with Windows Explorer as an external drag source without turning a confirmed same-volume Move into an accidental retained-source Copy result.
+- Ferry shall capture the final `DragDrop.DoDragDrop` effect and inspect the Windows Shell `Performed DropEffect` written back to the same drag `IDataObject`.
+- Ferry may remove remaining source paths only when both signals indicate Move. If either signal does not indicate Move, Ferry shall not delete source data.
+- If the target has already completed an optimized Move and a source path no longer exists, Ferry shall not perform a second delete.
+- `Ctrl+D&D` Copy and cancelled/invalid drops shall leave the Ferry source intact.
+- Ferry→Ferry internal D&D and Explorer→Ferry target behavior remain governed by the existing implementation and are not replaced by this external-source completion path.
+- Windows remains authoritative for destination-side D&D semantics and conflict handling.
+
+## 9. Release relationship
 
 - `Ferry_SPEC_v1.0.md` remains the historical v1.0/v1.0.2 baseline and is not rewritten.
-- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.1 behavior.
+- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.2 behavior.
 - Historical Prototype and RC records are retained as development evidence and are not normative for later releases.

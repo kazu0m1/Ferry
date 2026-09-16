@@ -1801,12 +1801,61 @@ namespace Ferry
             DataObject data = new DataObject(DataFormats.FileDrop, paths.ToArray());
             try
             {
-                DragDrop.DoDragDrop((DependencyObject)view, data, DragDropEffects.Copy | DragDropEffects.Move | DragDropEffects.Link);
+                DragDropEffects finalEffect = DragDrop.DoDragDrop((DependencyObject)view, data, DragDropEffects.Copy | DragDropEffects.Move | DragDropEffects.Link);
+                CompleteExternalMoveIfRequired(data, finalEffect, paths, state);
             }
             finally
             {
                 CancelPendingMultiSelectionGesture(ctx);
                 ctx.ItemDragArmed = false;
+            }
+        }
+
+
+        private void CompleteExternalMoveIfRequired(DataObject data, DragDropEffects finalEffect, IList<string> sourcePaths, TabState state)
+        {
+            // Windows Shell can complete a MOVE in two ways:
+            // 1) optimized move: the target moves/deletes the source itself; or
+            // 2) unoptimized move: the target copies the data and asks the source to delete it.
+            // Only case (2) requires Ferry to remove the originals.  Microsoft documents that
+            // the safe signal is BOTH DoDragDrop returning MOVE and the target writing
+            // "Performed DropEffect" = MOVE back into the same IDataObject.
+            bool performedMove = ClipboardHelper.WasUnoptimizedMovePerformed(data);
+            Logger.Write("External D&D completed: finalEffect=" + finalEffect + ", performedMove=" + performedMove + ".");
+            if ((finalEffect & DragDropEffects.Move) != DragDropEffects.Move) return;
+            if (!performedMove) return;
+
+            List<string> remainingSources = new List<string>();
+            for (int i = 0; i < sourcePaths.Count; i++)
+            {
+                string path = sourcePaths[i];
+                if (string.IsNullOrEmpty(path)) continue;
+                if (File.Exists(path) || Directory.Exists(path)) remainingSources.Add(path);
+            }
+
+            // An optimized Shell move may already have removed every source path.  In that
+            // case there is nothing left for Ferry to do, and most importantly no second delete.
+            if (remainingSources.Count == 0)
+            {
+                if (state != null) ScheduleFolderRefresh(state);
+                return;
+            }
+
+            try
+            {
+                bool completed = ShellFileOperations.DeleteAfterExternalMove(remainingSources);
+                if (!completed)
+                    throw new IOException("Windows did not complete cleanup of the original item(s) after the external move.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this,
+                    "The destination accepted the drag as a Move, but Ferry could not remove one or more original item(s).\n\n" + ex.Message,
+                    "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (state != null) ScheduleFolderRefresh(state);
             }
         }
 
