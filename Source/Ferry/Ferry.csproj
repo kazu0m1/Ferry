@@ -38,6 +38,7 @@
     <Compile Include="KnownFolders.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MainWindow.cs" />
+    <Compile Include="MainWindow.Archive.cs" />
     <Compile Include="MainWindow.Sidebar.cs" />
     <Compile Include="MainWindow.Types.cs" />
     <Compile Include="MainWindow.UI.cs" />
