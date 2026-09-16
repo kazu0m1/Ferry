@@ -74,6 +74,7 @@ echo Building Ferry.exe...
  "Source\Ferry\Logger.cs" ^
  "Source\Ferry\MainWindow.cs" ^
  "Source\Ferry\MainWindow.Types.cs" ^
+ "Source\Ferry\MainWindow.UI.cs" ^
  "Source\Ferry\NaturalStringComparer.cs" ^
  "Source\Ferry\Program.cs" ^
  "Source\Ferry\PromptDialog.cs" ^
