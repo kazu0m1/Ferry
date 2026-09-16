@@ -21,7 +21,7 @@ using Microsoft.Win32;
 
 namespace Ferry
 {
-    internal sealed class MainWindow : Window
+    internal sealed partial class MainWindow : Window
     {
         private AppSettings settings;
         private readonly Dictionary<Guid, TabViewContext> contexts = new Dictionary<Guid, TabViewContext>();
@@ -4981,65 +4981,6 @@ namespace Ferry
 
             CaptureColumnSettings(); if (WindowState == WindowState.Normal) { settings.WindowWidth = Width; settings.WindowHeight = Height; settings.WindowLeft = Left; settings.WindowTop = Top; } settings.WindowMaximized = WindowState == WindowState.Maximized; settings.SidebarWidth = mainGrid.ColumnDefinitions[0].ActualWidth > 0 ? mainGrid.ColumnDefinitions[0].ActualWidth : settings.SidebarWidth; settings.SearchMode = Convert.ToString(searchModeBox.SelectedItem); try { SettingsStore.Save(settings); } catch { }
             foreach (TabViewContext ctx in contexts.Values) { StopSearchDrain(ctx); CancelGridThumbnailLoad(ctx); ctx.State.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } }
-        }
-
-        private sealed class PinnedSidebarItem
-        {
-            public PinnedSidebarItem(string name, string fullPath) { Name = name; FullPath = fullPath; }
-            public string Name { get; private set; }
-            public string FullPath { get; private set; }
-        }
-
-        private sealed class InverseBooleanToVisibilityConverter : IValueConverter
-        {
-            public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-            {
-                return value is bool && (bool)value ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-            {
-                throw new NotSupportedException();
-            }
-        }
-
-        private sealed class PasteEntryStamp
-        {
-            public bool IsDirectory;
-            public long Length;
-            public long LastWriteUtcTicks;
-            public long CreationUtcTicks;
-        }
-
-        private sealed class PasteFeedbackSession
-        {
-            public string Destination;
-            public List<string> SourcePaths;
-            public HashSet<string> SourceDirectoryPaths;
-            public Dictionary<string, PasteEntryStamp> Before;
-            public bool OperationFinished;
-            public bool OperationCompleted;
-        }
-
-        private sealed class TabViewContext
-        {
-            public TabState State; public TabItem TabItem; public Grid Container; public ListView ListView; public ListBox GridView; public GridView ListGrid; public FileSystemWatcher Watcher; public DispatcherTimer RefreshTimer; public DispatcherTimer SearchDrainTimer; public CancellationTokenSource GridThumbnailCancellation;
-            public PasteFeedbackSession PasteFeedback;
-            public bool IsReconciling;
-            public List<FileItem> PreSearchItems; public HashSet<string> PreSearchSelection;
-            public Control DropTargetContainer; public object DropTargetBackgroundLocal = DependencyProperty.UnsetValue; public object DropTargetBorderBrushLocal = DependencyProperty.UnsetValue; public object DropTargetBorderThicknessLocal = DependencyProperty.UnsetValue;
-            public bool ItemDragArmed; public bool PendingMultiSelectionClick; public Selector PendingMultiSelectionView; public FileItem PendingMultiSelectionItem; public bool PendingMultiSelectionDragStarted;
-            public Canvas SelectionOverlay; public System.Windows.Shapes.Rectangle RubberBandRectangle; public System.Windows.Shapes.Rectangle SelectionAnchorRectangle;
-            public bool RubberBandPending; public bool RubberBandActive; public Selector RubberBandView; public Point RubberBandStart; public FileItem RubberBandStartItem; public FileItem RubberBandBackgroundFocusItem;
-            public ModifierKeys RubberBandModifiers; public HashSet<FileItem> RubberBandInitialSelection; public bool RubberBandPassThroughPending;
-            public Point RubberBandCurrentPoint; public HashSet<FileItem> RubberBandCurrentHitSet; public int RubberBandLastVerticalDirection;
-            public FileItem RubberBandSelectionAnchor; public HashSet<FileItem> RubberBandCtrlShiftBaseSelection;
-            public bool RubberBandCtrlShiftTrueBackgroundMode;
-            public bool RubberBandTransitionMode; public bool RubberBandCtrlShiftShiftReleasedMode;
-            public HashSet<FileItem> RubberBandCtrlShiftShiftReleasedToggleSet;
-            public FileItem SelectionAnchorItem;
-            public FileItem KeyboardNavigationItem;
-            public DispatcherTimer RubberBandAutoScrollTimer; public double RubberBandAutoScrollAccumulator;
         }
     }
 }

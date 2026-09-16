@@ -38,6 +38,7 @@
     <Compile Include="KnownFolders.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MainWindow.cs" />
+    <Compile Include="MainWindow.Types.cs" />
     <Compile Include="NaturalStringComparer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="PromptDialog.cs" />
