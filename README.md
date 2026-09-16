@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.0.2  
+> **Current release:** v1.1.0  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,15 +15,29 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.0.2 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.2-win-portable.zip)**
+**[Download Ferry v1.1.0 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.0-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
 > **Windows SmartScreen:** Ferry is currently unsigned, so Windows may show a warning the first time you run it. Choose **More info** and then **Run anyway** if you downloaded Ferry from this official repository.
 
-## Screenshot
+## Screenshots
 
 ![Ferry main window](docs/screenshot-main.png)
+
+### More of Ferry
+
+| Grid / Location Box | Settings |
+|---|---|
+| ![Ferry Grid view and Location Box](docs/screenshot-grid-location.png) | ![Ferry Settings](docs/screenshot-settings.png) |
+
+| Rubber-band selection | Tabs |
+|---|---|
+| ![Ferry rubber-band selection](docs/screenshot-rubber-band.png) | ![Ferry tabs](docs/screenshot-tabs.png) |
+
+| Context menu | Empty folder |
+|---|---|
+| ![Ferry context menu](docs/screenshot-context-menu.png) | ![Ferry empty folder](docs/screenshot-empty-folder.png) |
 
 ## Why Ferry?
 
@@ -54,7 +68,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.0.2-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.1.0-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -94,8 +108,8 @@ A custom terminal command and arguments can be set in **Settings**.
 
 - Sidebar with Home, standard user folders, pinned folders, drives, and Recycle Bin
 - Pinned folders can be reordered by drag & drop; the order persists across restarts
-- Sidebar width is configurable from 50–480
-- Breadcrumb navigation
+- Sidebar width is configurable from 50–480; double-click the divider to auto-fit visible labels
+- Breadcrumb navigation; `Ctrl+L` opens the Location Box, `Esc` or `Ctrl+L` again returns to Breadcrumb
 - Back / Forward / Up / Home
 - Tabs (`Ctrl+T`, `Ctrl+W`, `Ctrl+Tab`, `Ctrl+Shift+Tab`)
 - List and Grid views — List uses lightweight Windows Shell type icons; Grid loads content thumbnails
@@ -108,7 +122,9 @@ A custom terminal command and arguments can be set in **Settings**.
 - New items detected from outside Ferry stay at the bottom until the user explicitly refreshes or sorts; metadata such as an active download's size can continue updating in place
 - `F12` opens a terminal in the current Ferry folder regardless of item selection
 
-> Ferry v1.0 intentionally does not implement rubber-band/marquee selection. Use `Shift+Click` for contiguous range selection.
+- Explorer-style rubber-band/marquee selection in List and Grid views, including Ctrl / Shift / Ctrl+Shift semantics and edge autoscroll
+- Visible Selection Anchor indicator for predictable Shift-range behavior
+- Rubber-band autoscroll speed is configurable from 30–300 in Settings (default 100)
 
 ### Search
 
@@ -279,7 +295,7 @@ Make-PortableRelease.cmd
 This creates:
 
 ```text
-dist\Ferry-v1.0.2-win-portable.zip
+dist\Ferry-v1.1.0-win-portable.zip
 ```
 
 ## Repository layout
@@ -290,11 +306,13 @@ Ferry/
 ├─ Portable/                     launcher and local runtime folder
 ├─ ShellIntegration/             optional Explorer context-menu registration
 ├─ docs/                         publication / design documentation
+│  └─ dev-history/               archived prototypes / RC validation records
 ├─ Build.cmd                     local build
 ├─ Make-PortableRelease.cmd      binary release ZIP builder
-├─ Ferry_SPEC_v1.0.md            functional specification
+├─ Ferry_SPEC_v1.1.md            current v1.1 release specification
+├─ Ferry_SPEC_v1.0.md            historical v1.0 baseline
 ├─ TEST_CHECKLIST.md             regression checklist
-├─ RELEASE_NOTES_v1.0.2.md       Current release notes
+├─ RELEASE_NOTES_v1.1.0.md       Current release notes
 ├─ CHANGELOG.md
 ├─ LICENSE.txt
 ├─ README.md
@@ -305,7 +323,7 @@ Ferry/
 
 Ferry intentionally does **not** implement its own Windows Shell, high-performance copy engine, terminal emulator, archive codec, full-text search engine, cloud client, or search database. When Windows already owns a capability well, Ferry tries to reuse it rather than duplicate it.
 
-See `Ferry_SPEC_v1.0.md` for the full v1.0 requirements baseline.
+See `Ferry_SPEC_v1.1.md` for the current v1.1 release delta and `Ferry_SPEC_v1.0.md` for the historical v1.0/v1.0.2 baseline.
 
 ## License
 

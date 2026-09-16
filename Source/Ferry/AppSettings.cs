@@ -23,6 +23,7 @@ namespace Ferry
         public double SidebarWidth { get; set; }
         public bool SidebarVisible { get; set; }
         public double GridIconSize { get; set; }
+        public double RubberBandAutoScrollSpeed { get; set; }
         public string TerminalCommand { get; set; }
         public string TerminalArguments { get; set; }
         public List<string> PinnedFolders { get; set; }
@@ -48,6 +49,7 @@ namespace Ferry
             SidebarWidth = 220;
             SidebarVisible = true;
             GridIconSize = 64;
+            RubberBandAutoScrollSpeed = 100;
             TerminalCommand = string.Empty;
             TerminalArguments = string.Empty;
             PinnedFolders = new List<string>();
@@ -144,6 +146,11 @@ namespace Ferry
             if (s.SidebarWidth < 50) s.SidebarWidth = 220;
             if (s.SidebarWidth > 480) s.SidebarWidth = 480;
             if (s.GridIconSize < 32) s.GridIconSize = 64;
+            // Older settings files do not contain this property and deserialize it as 0.
+            // Treat that as the v1.1 default; otherwise keep imported values inside the UI range.
+            if (s.RubberBandAutoScrollSpeed <= 0) s.RubberBandAutoScrollSpeed = 100;
+            else if (s.RubberBandAutoScrollSpeed < 30) s.RubberBandAutoScrollSpeed = 30;
+            else if (s.RubberBandAutoScrollSpeed > 300) s.RubberBandAutoScrollSpeed = 300;
         }
 
         private static string PrettyJson(string json)

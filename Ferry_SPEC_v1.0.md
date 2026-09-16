@@ -11,6 +11,8 @@
 
 ---
 
+> **Documentation status note (post-v1.0.2 development):** The public v1.0/v1.0.2 selection baseline documented below is historical. The validated post-v1.0.2 rubber-band candidate behavior is frozen separately in `docs/RUBBER_BAND_SELECTION_SPEC_JA.md`. Historical release requirements are intentionally not rewritten here until the next public release version/spec baseline is assigned.
+
 ## 1. Product concept
 
 Ferry is a lightweight file browser for Windows 11 inspired by selected workflow and usability ideas from GNOME Files (Nautilus).

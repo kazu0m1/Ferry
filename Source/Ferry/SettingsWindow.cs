@@ -18,6 +18,8 @@ namespace Ferry
         private CheckBox sidebar;
         private TextBox sidebarWidth;
         private CheckBox sortFoldersFirst;
+        private Slider rubberBandAutoScrollSpeed;
+        private TextBlock rubberBandAutoScrollSpeedValue;
         private ComboBox search;
         private TextBox terminal;
         private TextBox terminalArgs;
@@ -50,6 +52,42 @@ namespace Ferry
             sidebar = new CheckBox { Content = "Show sidebar", IsChecked = settings.SidebarVisible, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(sidebar);
             sidebarWidth = new TextBox { Text = Math.Round(settings.SidebarWidth).ToString(CultureInfo.InvariantCulture), Width = 90, Padding = new Thickness(7, 5, 7, 5), HorizontalAlignment = HorizontalAlignment.Left }; panel.Children.Add(Labeled("Sidebar width (50–480)", sidebarWidth));
             sortFoldersFirst = new CheckBox { Content = "Sort folders before files", IsChecked = settings.SortFoldersFirst, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(sortFoldersFirst);
+
+            panel.Children.Add(Heading("Selection"));
+            StackPanel autoScrollSpeedPanel = new StackPanel { Orientation = Orientation.Horizontal };
+            rubberBandAutoScrollSpeed = new Slider
+            {
+                Minimum = 30,
+                Maximum = 300,
+                Value = settings.RubberBandAutoScrollSpeed,
+                TickFrequency = 10,
+                IsSnapToTickEnabled = true,
+                Width = 320,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            rubberBandAutoScrollSpeedValue = new TextBlock
+            {
+                Text = Math.Round(settings.RubberBandAutoScrollSpeed).ToString(CultureInfo.InvariantCulture),
+                Width = 54,
+                Margin = new Thickness(12, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            rubberBandAutoScrollSpeed.ValueChanged += delegate
+            {
+                if (rubberBandAutoScrollSpeedValue != null)
+                    rubberBandAutoScrollSpeedValue.Text = Math.Round(rubberBandAutoScrollSpeed.Value).ToString(CultureInfo.InvariantCulture);
+            };
+            autoScrollSpeedPanel.Children.Add(rubberBandAutoScrollSpeed);
+            autoScrollSpeedPanel.Children.Add(rubberBandAutoScrollSpeedValue);
+            panel.Children.Add(Labeled("Rubber-band autoscroll speed (30–300)", autoScrollSpeedPanel));
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Default: 100. Higher values scale both acceleration and maximum speed while a selection rectangle is dragged beyond the top or bottom edge.",
+                Foreground = SystemColors.GrayTextBrush,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, -4, 0, 8)
+            });
 
             panel.Children.Add(Heading("Search")); search = new ComboBox { MinWidth = 160 }; search.Items.Add("Contains"); search.Items.Add("StartsWith"); search.SelectedItem = settings.SearchMode; panel.Children.Add(Labeled("Default match mode", search));
             panel.Children.Add(Heading("External terminal")); terminal = new TextBox { Text = settings.TerminalCommand, Padding = new Thickness(7, 5, 7, 5) }; panel.Children.Add(Labeled("Command (blank = Auto)", terminal)); terminalArgs = new TextBox { Text = settings.TerminalArguments, Padding = new Thickness(7, 5, 7, 5) }; panel.Children.Add(Labeled("Arguments (custom terminal only)", terminalArgs)); panel.Children.Add(new TextBlock { Text = "Auto tries Windows Terminal, then Windows PowerShell, then Command Prompt.", Foreground = SystemColors.GrayTextBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) });
@@ -98,12 +136,12 @@ namespace Ferry
         private void ExportSettings(object sender, RoutedEventArgs e) { ApplyFields(settings); SaveFileDialog d = new SaveFileDialog { FileName = "FerrySettings.json", Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*" }; if (d.ShowDialog(this) == true) SettingsStore.Export(settings, d.FileName); }
         private void ImportSettings(object sender, RoutedEventArgs e) { OpenFileDialog d = new OpenFileDialog { Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*" }; if (d.ShowDialog(this) == true) { try { AppSettings imported = SettingsStore.Import(d.FileName); CopyInto(imported, settings); LoadFields(settings); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); } } }
         private void ResetSettings(object sender, RoutedEventArgs e) { CopyInto(new AppSettings(), settings); LoadFields(settings); }
-        private void ApplyFields(AppSettings s) { s.HomePath = Directory.Exists(home.Text) ? home.Text : s.HomePath; s.DefaultView = Convert.ToString(view.SelectedItem); s.ShowHidden = hidden.IsChecked == true; s.SidebarVisible = sidebar.IsChecked == true; double width; if (double.TryParse(sidebarWidth.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out width) || double.TryParse(sidebarWidth.Text, out width)) s.SidebarWidth = Math.Max(50, Math.Min(480, width)); s.SortFoldersFirst = sortFoldersFirst.IsChecked == true; s.SearchMode = Convert.ToString(search.SelectedItem); s.TerminalCommand = terminal.Text; s.TerminalArguments = terminalArgs.Text; s.DebugLogging = debug.IsChecked == true; }
-        private void LoadFields(AppSettings s) { home.Text = s.HomePath; view.SelectedItem = s.DefaultView; hidden.IsChecked = s.ShowHidden; sidebar.IsChecked = s.SidebarVisible; sidebarWidth.Text = Math.Round(s.SidebarWidth).ToString(CultureInfo.InvariantCulture); sortFoldersFirst.IsChecked = s.SortFoldersFirst; search.SelectedItem = s.SearchMode; terminal.Text = s.TerminalCommand; terminalArgs.Text = s.TerminalArguments; debug.IsChecked = s.DebugLogging; }
+        private void ApplyFields(AppSettings s) { s.HomePath = Directory.Exists(home.Text) ? home.Text : s.HomePath; s.DefaultView = Convert.ToString(view.SelectedItem); s.ShowHidden = hidden.IsChecked == true; s.SidebarVisible = sidebar.IsChecked == true; double width; if (double.TryParse(sidebarWidth.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out width) || double.TryParse(sidebarWidth.Text, out width)) s.SidebarWidth = Math.Max(50, Math.Min(480, width)); s.SortFoldersFirst = sortFoldersFirst.IsChecked == true; s.RubberBandAutoScrollSpeed = Math.Max(30, Math.Min(300, Math.Round(rubberBandAutoScrollSpeed.Value))); s.SearchMode = Convert.ToString(search.SelectedItem); s.TerminalCommand = terminal.Text; s.TerminalArguments = terminalArgs.Text; s.DebugLogging = debug.IsChecked == true; }
+        private void LoadFields(AppSettings s) { home.Text = s.HomePath; view.SelectedItem = s.DefaultView; hidden.IsChecked = s.ShowHidden; sidebar.IsChecked = s.SidebarVisible; sidebarWidth.Text = Math.Round(s.SidebarWidth).ToString(CultureInfo.InvariantCulture); sortFoldersFirst.IsChecked = s.SortFoldersFirst; rubberBandAutoScrollSpeed.Value = Math.Max(30, Math.Min(300, s.RubberBandAutoScrollSpeed)); rubberBandAutoScrollSpeedValue.Text = Math.Round(rubberBandAutoScrollSpeed.Value).ToString(CultureInfo.InvariantCulture); search.SelectedItem = s.SearchMode; terminal.Text = s.TerminalCommand; terminalArgs.Text = s.TerminalArguments; debug.IsChecked = s.DebugLogging; }
         private static AppSettings Clone(AppSettings s) { AppSettings n = new AppSettings(); CopyInto(s, n); return n; }
         private static void CopyInto(AppSettings a, AppSettings b)
         {
-            b.HomePath=a.HomePath; b.DefaultView=a.DefaultView; b.ShowHidden=a.ShowHidden; b.SortKey=a.SortKey; b.SortDescending=a.SortDescending; b.SortFoldersFirst=a.SortFoldersFirst; b.SearchMode=a.SearchMode; b.WindowWidth=a.WindowWidth; b.WindowHeight=a.WindowHeight; b.WindowLeft=a.WindowLeft; b.WindowTop=a.WindowTop; b.WindowMaximized=a.WindowMaximized; b.SidebarWidth=a.SidebarWidth; b.SidebarVisible=a.SidebarVisible; b.GridIconSize=a.GridIconSize; b.TerminalCommand=a.TerminalCommand; b.TerminalArguments=a.TerminalArguments; b.DebugLogging=a.DebugLogging;
+            b.HomePath=a.HomePath; b.DefaultView=a.DefaultView; b.ShowHidden=a.ShowHidden; b.SortKey=a.SortKey; b.SortDescending=a.SortDescending; b.SortFoldersFirst=a.SortFoldersFirst; b.SearchMode=a.SearchMode; b.WindowWidth=a.WindowWidth; b.WindowHeight=a.WindowHeight; b.WindowLeft=a.WindowLeft; b.WindowTop=a.WindowTop; b.WindowMaximized=a.WindowMaximized; b.SidebarWidth=a.SidebarWidth; b.SidebarVisible=a.SidebarVisible; b.GridIconSize=a.GridIconSize; b.RubberBandAutoScrollSpeed=a.RubberBandAutoScrollSpeed; b.TerminalCommand=a.TerminalCommand; b.TerminalArguments=a.TerminalArguments; b.DebugLogging=a.DebugLogging;
             b.PinnedFolders = new System.Collections.Generic.List<string>(a.PinnedFolders); b.ColumnWidths = new System.Collections.Generic.Dictionary<string,double>(a.ColumnWidths, StringComparer.OrdinalIgnoreCase); b.ColumnOrder = new System.Collections.Generic.List<string>(a.ColumnOrder); b.HiddenColumns = new System.Collections.Generic.List<string>(a.HiddenColumns);
         }
     }

@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.0.2  
+> **現在のリリース:** v1.1.0  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.0.2 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.0.2-win-portable.zip)**
+**[Ferry v1.1.0 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.0-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -24,6 +24,20 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 ## スクリーンショット
 
 ![Ferry メイン画面](docs/screenshot-main.png)
+
+### Ferryの画面例
+
+| Grid / Location Box | Settings |
+|---|---|
+| ![Ferry Grid表示とLocation Box](docs/screenshot-grid-location.png) | ![Ferry Settings](docs/screenshot-settings.png) |
+
+| ラバーバンド範囲選択 | タブ |
+|---|---|
+| ![Ferry ラバーバンド範囲選択](docs/screenshot-rubber-band.png) | ![Ferry タブ](docs/screenshot-tabs.png) |
+
+| コンテキストメニュー | 空フォルダー |
+|---|---|
+| ![Ferry コンテキストメニュー](docs/screenshot-context-menu.png) | ![Ferry 空フォルダー](docs/screenshot-empty-folder.png) |
 
 ## Ferryが大切にしていること
 
@@ -48,7 +62,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.0.2-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.1.0-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -63,7 +77,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.0.2の初期設定
+## v1.1.0の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -87,8 +101,8 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 
 - Home / 標準ユーザーフォルダー / ピン留め / ドライブ / ごみ箱のSidebar
 - PinnedはD&Dで並べ替え可能。順序は再起動後も保持
-- Sidebar幅は50～480で設定可能
-- Breadcrumb
+- Sidebar幅は50～480で設定可能。境界をダブルクリックすると表示文字列幅へ自動フィット
+- Breadcrumb（`Ctrl+L`でLocation Box、`Esc`または再度`Ctrl+L`でBreadcrumbへ復帰）
 - Back / Forward / Up / Home
 - Tabs
 - List / Grid（Listは軽量なWindows Shell種別アイコン、Gridは内容サムネイル）
@@ -102,7 +116,9 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 - ダウンロード中の`.crdownload`などは位置を動かさずSize/Modifiedを更新
 - `F12`で、選択状態に関係なく現在フォルダーにTerminalを開く
 
-> v1.0ではラバーバンド（矩形）範囲選択は実装していません。連続範囲の選択には`Shift+Click`を使用します。
+- Explorerライクなラバーバンド（矩形）範囲選択（List / Grid、Ctrl / Shift / Ctrl+Shift、画面端autoscroll対応）
+- Selection Anchorを破線で可視化
+- 範囲選択時のautoscroll速度はSettingsで30～300に調整可能（既定100）
 
 ### 検索
 
@@ -249,10 +265,14 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.0.2-win-portable.zip
+dist\Ferry-v1.1.0-win-portable.zip
 ```
 
 です。
+
+## 仕様書
+
+現行v1.1の差分仕様は`Ferry_SPEC_v1.1.md`、歴史的なv1.0/v1.0.2ベースラインは`Ferry_SPEC_v1.0.md`を参照してください。詳細な矩形選択仕様は`docs/RUBBER_BAND_SELECTION_SPEC_JA.md`に凍結しています。
 
 ## License
 

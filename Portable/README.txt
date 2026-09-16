@@ -1,12 +1,22 @@
-﻿Ferry v1.0.2 Portable
+﻿Ferry v1.1.0 Portable
 
 Ferry is a lightweight Windows 11 file manager inspired by the simplicity and workflow of GNOME Files (Nautilus).
+
+Highlights in v1.1.0:
+- Explorer-style rubber-band selection in List and Grid views
+- Ctrl / Shift / Ctrl+Shift selection behavior with a visible Selection Anchor
+- Edge autoscroll for rubber-band selection, configurable from 30 to 300
+- Stable List/Grid selection synchronization
+- Improved Ctrl+L Location Box / Breadcrumb switching
+- Sidebar double-click auto-fit
+- Fixed-height toolbar with 30x30 icon buttons and a dedicated 10px Breadcrumb scrollbar
 
 Factory defaults:
 - Home: current Windows user profile (%USERPROFILE%)
 - View: List
 - Search: Contains
 - Sort folders before files: On
+- Rubber-band autoscroll speed: 100
 - Terminal: Auto (Windows Terminal -> Windows PowerShell -> Command Prompt)
 - F12: Open Terminal Here for the current Ferry folder
 

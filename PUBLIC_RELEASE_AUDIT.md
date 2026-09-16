@@ -1,73 +1,58 @@
-# Ferry Public v1.0.2 — Release Audit
+﻿# Ferry Public v1.1.0 — Release Audit
 
-**Audit date:** 2026-09-13  
-**Release status:** READY FOR PUBLICATION after final Windows build/package/launch verification
+**Date:** 2026-09-16  
+**Behavioral baseline:** v1.1.0 RC20  
+**Status:** final source frozen; Windows final build / Portable artifact generation remains
 
-This document summarizes the v1.0.2 scope and validation completed through the accepted RC1. It is not a legal opinion.
+## Scope
 
-## 1. Release scope
+v1.1.0 is a backward-compatible minor release centered on Explorer-style selection, keyboard navigation, and navigation/UI polish. The historical v1.0.2 audit remains under `docs/dev-history/releases/v1.0.2/`.
 
-v1.0.2 changes one main product area: ZIP creation/extraction.
+## Major accepted changes
 
-- Ferry owns ZIP workflow/control using .NET `System.IO.Compression`.
-- Determinate progress, speed, ETA, Cancel, and non-blocking Ferry operation.
-- Ferry-owned extraction conflict handling including MERGE and KEEP BOTH.
-- Extraction safety validation, resource warnings, temporary-file finalization, and cancellation cleanup.
-- Existing v1.0.1 browsing/search/rename/selection/Shell behavior is retained.
-- Rubber-band/marquee selection remains out of scope for v1.0.2.
+- Rubber-band selection for List and Grid.
+- Ctrl / Shift / Ctrl+Shift semantics, D&D routing, outside-window release, and edge autoscroll.
+- Visible Selection Anchor and synchronized keyboard-current handling.
+- Grid four-direction keyboard navigation after true-background clear.
+- Explorer-like List interaction geometry: 10px left true-background gutter and right-of-final-column true background.
+- List selection fill / Selection Anchor clipped to the final visible data column.
+- Exact List/Grid selection synchronization.
+- Ctrl+L Location Box dismissal/restoration behavior.
+- Configurable rubber-band autoscroll speed 30–300, default 100.
+- Sidebar divider double-click auto-fit.
+- Fixed toolbar/path-row layout, 30×30 icon buttons, and 10px Breadcrumb horizontal scrollbar with always-visible end buttons.
+- Scrollbar double-click routing fix preventing selected-item accidental open.
 
-## 2. Dependency / source-origin audit
+## Validation record
 
-- Build remains C# / WPF / .NET Framework 4.8.
-- No NuGet package is required by the supported build path.
-- ZIP support uses framework assemblies `System.IO.Compression.dll` and `System.IO.Compression.FileSystem.dll`.
-- No 7-Zip/WinRAR/external archive command-line dependency is required for normal Ferry ZIP work.
-- Ferry does not implement Deflate from scratch.
-- No GNOME/Nautilus source code or GNOME artwork is bundled.
+- Prototype 27 established the main rubber-band selection baseline.
+- Final rubber-band regression: PASS, including 10,000-item smoke testing.
+- RC1–RC10 completed Location Box / toolbar / Breadcrumb polish.
+- RC11–RC17 resolved true-background keyboard-current recovery, Shift+Arrow behavior, Selection Anchor synchronization, and Grid directional navigation.
+- RC18–RC20 completed final List true-background geometry, selection-fill clipping, and gutter header visual consistency.
+- RC20 Windows validation: **all requested checks PASS**. This is the frozen application-behavior baseline for final v1.1.0.
 
-## 3. Privacy / data behavior
+## Known characteristic
 
-Unchanged from v1.0.1:
+Extreme Shift-range selection across several thousand items can take several seconds. This remains accepted because ordinary operation, marquee selection, `Ctrl+A`, virtualization, and selection correctness were stable in testing.
 
-- no telemetry;
-- no automatic crash upload;
-- no account system;
-- settings stored in local portable JSON;
-- no Ferry-owned search database;
-- no always-running service/tray process.
+## Final source metadata
 
-## 4. Windows validation status
+- Window title: `Ferry`
+- AssemblyVersion / FileVersion: `1.1.0.0`
+- AssemblyInformationalVersion: `1.1.0`
+- Portable package label: `1.1.0`
+- Breadcrumb scrollbar height: `10px`
+- Breadcrumb thumb/end-button CornerRadius: `0`
 
-The accepted ZIP Integration Prototype 4 passed practical Windows regression and safety testing for normal compression/extraction, non-blocking Ferry operation, conflict handling, cancellation/cleanup, unsafe archive blocking, resource warnings, and safe close behavior.
+## Publisher decisions
 
-The promoted v1.0.2-rc1 subsequently passed the complete Windows smoke test, including build, representative existing features, ZIP create/extract, conflict handling, Cancel, safety spot checks, safe close, Portable ZIP generation, fresh-folder launch, and restart.
+- Keep `docs/dev-history/` in the public repository.
+- Keep v1.0.0–v1.0.2 official Release Notes in repository root.
+- Publish v1.1.0 unsigned.
+- Keep the approved current screenshot set; do not retake for the small final List-geometry visual difference.
+- Ubuntu Japanese community announcement is intentionally deferred.
 
-A detailed-context-menu extension initialization issue observed with **Open in Terminal** was reproduced in Windows Explorer after Explorer restart and classified as external to Ferry.
+## Environment limitation
 
-## 5. Final freeze rule
-
-The accepted v1.0.2-rc1 application logic is promoted to v1.0.2 final unchanged.
-
-Finalization changes are limited to:
-
-- `AssemblyInformationalVersion`;
-- release/packaging metadata;
-- README / specification release-baseline wording / release notes;
-- final release checklist, validation, and publication documentation.
-
-Any application-logic change requires a new validation cycle rather than silent inclusion in final.
-
-## 6. Final Windows packaging gate
-
-Before publishing on GitHub from Windows:
-
-1. Run `Build.cmd`.
-2. Confirm Settings → About Ferry shows `Version 1.0.2`.
-3. Perform one normal ZIP create and one normal ZIP extract.
-4. Run `Make-PortableRelease.cmd`.
-5. Confirm `dist\Ferry-v1.0.2-win-portable.zip` exists.
-6. Extract the ZIP into a fresh folder and launch `Ferry.exe`.
-7. Complete `FINAL_RELEASE_CHECKLIST_JA.md`.
-8. Publish tag/release `v1.0.2` with `RELEASE_NOTES_v1.0.2.md` and the portable ZIP asset.
-
-**Release decision:** READY, subject only to final Windows build/package/launch verification.
+This preparation environment cannot compile or run .NET Framework 4.8 WPF. Final Windows build/launch, Portable ZIP generation, and binary SHA-256 must be completed on Windows before GitHub publication.

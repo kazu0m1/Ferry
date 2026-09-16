@@ -1,72 +1,50 @@
-# Ferry v1.0.2 Final Static Validation
+﻿# Ferry v1.1.0 — Final Static Validation
 
-**Baseline:** Ferry v1.0.2-rc1, accepted on Windows for release  
-**Finalization rule:** application logic must not change during promotion to v1.0.2 final.
+**Date:** 2026-09-16  
+**Candidate:** `1.1.0` final  
+**Behavioral baseline:** v1.1.0 RC20 (Windows real-machine PASS)
 
-## Application source comparison
+## Final application delta from RC20
 
-Files under `Source/Ferry` that differ from accepted RC1:
+No application behavior was changed after the RC20 Windows PASS.
 
-- `AssemblyInfo.cs`
+Finalization changes are limited to:
 
-Expected result: only `AssemblyInfo.cs`, changing `AssemblyInformationalVersion` from `1.0.2-rc1` to `1.0.2`.
+1. Window title: `Ferry - RC 20` → `Ferry`.
+2. `AssemblyInformationalVersion`: `1.1.0-rc20` → `1.1.0`.
+3. `Make-PortableRelease.cmd`: `VERSION=1.1.0-rc20` → `VERSION=1.1.0`.
+4. Release documentation / screenshot gallery / final audit records.
 
-Result: **PASS**
+## Version metadata
 
-`app.manifest` remains `1.0.2.0`; Archive/MainWindow/Shell/Search/Selection and all other application source files are byte-identical to accepted RC1.
+- `AssemblyVersion`: `1.1.0.0`
+- `AssemblyFileVersion`: `1.1.0.0`
+- `AssemblyInformationalVersion`: `1.1.0`
+- Main window title: `Ferry`
+- `Make-PortableRelease.cmd`: `VERSION=1.1.0`
+- Expected binary asset: `dist\Ferry-v1.1.0-win-portable.zip`
 
-## Build/source coverage
+## Frozen v1.1.0 interaction baseline
 
-- [x] C# source files under `Source/Ferry`: `29`
-- [x] all 29 C# source files are referenced by `Build.cmd`
-- [x] no C# source file was added or removed during final promotion
+- Explorer-style rubber-band selection in List / Grid.
+- Normal / Ctrl / Shift / Ctrl+Shift marquee semantics and D&D coexistence.
+- Edge autoscroll, Settings range 30–300, default 100.
+- Selection Anchor visualization.
+- List true-background geometry: left 10px gutter plus right-of-final-column tail.
+- List selection fill and Selection Anchor stop at the final visible data column.
+- List / Grid keyboard navigation after true-background clear, including Shift+Arrow recovery and Grid four-direction navigation.
+- List ⇄ Grid selection synchronization.
+- `Ctrl+L` / Breadcrumb interaction, 10px Breadcrumb horizontal scrollbar, 30×30 toolbar buttons.
+- Sidebar divider double-click auto-fit.
 
-## Release metadata
+## Documentation / repository
 
-- [x] AssemblyVersion = `1.0.2.0`
-- [x] AssemblyFileVersion = `1.0.2.0`
-- [x] AssemblyInformationalVersion = `1.0.2`
-- [x] app.manifest = `1.0.2.0`
-- [x] Portable README = `Ferry v1.0.2 Portable`
-- [x] `Make-PortableRelease.cmd` version = `1.0.2`
-- [x] Expected portable asset = `Ferry-v1.0.2-win-portable.zip`
-- [x] Specification revision remains `1.0.24` because final promotion changes no requirements
-- [x] Specification implementation baseline = `Ferry v1.0.2`
-- [x] README / README.ja current-release and direct-download text = v1.0.2
-- [x] `RELEASE_NOTES_v1.0.2.md` present
-- [x] `FINAL_RELEASE_CHECKLIST_JA.md` present
-- [x] `docs/GITHUB_V1.0.2_RELEASE_GUIDE_JA.md` present
-- [x] public screenshot `docs/screenshot-main.png` present
+- README / README.ja current release and direct download references = v1.1.0.
+- Approved screenshot set copied under `docs/` and referenced by README / README.ja.
+- v1.0.x official release notes remain in repository root.
+- Prototype / RC evidence remains under `docs/dev-history/`.
+- Ubuntu Japanese community announcement remains prepared but publication is intentionally deferred.
 
-## Package hygiene
+## Build limitation
 
-- [x] v1.0.2 RC-only root documents removed
-- [x] v1.0.2 RC pre-release guide removed/replaced by final release guide
-- [x] no `.exe` / `.pdb` included in source tree
-- [x] no user `settings.json` included
-- [x] no Ferry debug log included
-- [x] final source ZIP integrity verification after packaging = PASS
-
-## Accepted Windows validation basis
-
-Before final promotion:
-
-- ZIP Integration Prototype 4 regression test: **PASS**
-- ZIP Integration Prototype 4 safety test: **PASS**
-- v1.0.2-rc1 Windows smoke test: **PASS / ACCEPTED**
-- fresh portable-package launch and ZIP create/extract in RC1 smoke test: **PASS**
-
-The observed first-invocation omission of some dynamic Windows detailed-context-menu extensions (including Open in Terminal) was reproduced in Windows Explorer after Explorer restart and is treated as an external Windows Shell behavior, not a Ferry release blocker.
-
-## Windows-only final gate
-
-This environment cannot run the Windows .NET Framework/WPF build toolchain. On Windows:
-
-1. Run `Build.cmd`.
-2. Confirm Settings → About Ferry = `Version 1.0.2`.
-3. Run one normal ZIP compression and one normal ZIP extraction.
-4. Run `Make-PortableRelease.cmd`.
-5. Extract `dist\Ferry-v1.0.2-win-portable.zip` into a fresh folder and launch it.
-6. Complete `FINAL_RELEASE_CHECKLIST_JA.md`.
-
-**Static release result: PASS**
+This environment does not provide the Windows .NET Framework 4.8 WPF build/runtime environment. Compilation, launch validation, Portable binary creation, and final binary SHA-256 must be completed on Windows using `FINAL_RELEASE_CHECKLIST_JA.md`.

@@ -1,5 +1,195 @@
 ﻿# Ferry Changelog
 
+## [1.1.0] - 2026-09-16
+
+### Released
+- RC20 passed final Windows validation and is promoted to Ferry v1.1.0 with no further application-behavior changes.
+- Final v1.1.0 freezes the validated List/Grid selection, keyboard navigation, true-background geometry, rubber-band selection, D&D coexistence, Breadcrumb/Location Box, toolbar, and Sidebar behavior.
+- Release metadata changed from RC20 to final (`Ferry`, informational version `1.1.0`, portable package version `1.1.0`).
+- README screenshot gallery updated with the approved v1.1.0 release-candidate screenshots.
+
+
+## [1.1.0-rc20] - 2026-09-16
+
+### Fixed
+- List左gutterのGridView headerが独自の`SystemColors.ControlBrush`で塗られ、他のdata-column headerと色がずれる視覚的不整合を修正。
+- gutter headerの明示背景色を廃止し、通常のGridViewColumnHeaderと同じWindows/WPF theme backgroundを使用。
+- RC19でPASSしたselection fill clipping、true-background gutter/tail、rubber-band、D&D、List/Grid keyboard navigationには変更なし。
+
+## [1.1.0-rc19] - 2026-09-16
+
+### Fixed
+- Details/List selection fill is now visually clipped to the same data-column span used by the RC18 Selection Anchor and interaction geometry.
+- The left true-background gutter and the area right of the final visible column remain visually unselected while preserving the native WPF/theme selection appearance inside the data span.
+- No keyboard-navigation, Grid navigation, rubber-band selection, D&D, or column-geometry logic changed from RC18.
+
+## [1.1.0-rc18] - 2026-09-16
+
+### Changed
+- List表示の左端に10pxのExplorer風true-background gutterを追加し、最左データカラムとの間にrubber-band開始用の余白を確保。
+- ListのSelection Anchor破線をListView全幅ではなく、左gutterを除いた「最左データカラム〜最右データカラム」の範囲に限定。
+- 最右データカラムより右側を、行の高さ内であってもFerry上のtrue backgroundとして扱うようhit testingを統一。
+- Listのrubber-band intersection geometryも同じdata-column spanへ統一。
+
+### Fixed
+- 左gutter／右側tailでのクリック、rubber-band開始、右クリック・中クリック、double-click、drop target判定が行itemとして誤認されないよう統一。
+- RC17でPASSしたGrid 4方向keyboard navigation、およびRC16までのList keyboard navigationは変更しない。
+
+## [1.1.0-rc17] - 2026-09-16
+
+### Fixed
+- Grid表示の通常`Left`/`Right`後にも、Listと同様にSelection Anchorを実際の選択/focus itemへ同期するよう修正。
+- Gridでtrue-background clear後に`Left`/`Right`を押してもkeyboard navigationが復帰しない経路を修正。
+- Gridでtrue-background clear後の`Up`/`Down`をListの`index ± 1`として扱っていた暫定処理を廃止し、`VirtualizingWrapPanel`の実際の列数から視覚方向を計算する。
+- List表示のRC16 PASS済みkeyboard navigationには変更を加えない。
+
+## [1.1.0-rc16] - 2026-09-15
+
+### Fixed
+- RC15で確認された、無修飾`Up`/`Down`後に破線Selection Anchorが実際の選択/focusより1 item遅れて追随するoff-by-one表示・論理同期を修正。
+- PreviewKeyDownから`DispatcherPriority.Input`で同期する方式を廃止し、WPF ListView/ListBoxがnative Arrow navigationを完了した後のbubble-phase `KeyDown`で現在itemを同期する。
+- RC15でPASSしたtrue-background clear後の無修飾Arrow、および`Shift+Arrow`のA/B範囲回復は維持。
+- Rubber-band / D&D / autoscroll / Breadcrumb / Sidebar等は変更しない。
+
+## [1.1.0-rc15] - 2026-09-15
+
+### Fixed
+- Explorer実機観察に合わせ、通常の`Up`/`Down`で到達したitemを次のkeyboard Shift範囲の起点としてFerryのSelection Anchorにも同期。
+- true-backgroundで0件選択にした直後の`Shift+Up` / `Shift+Down`をFerryが明示処理し、保持していたkeyboard originから範囲選択を再開するよう修正。
+- `Aを選択 → 完全空白で選択解除 → Shift+Down` はExplorer同様に`A+B`を選択し、viewport端へjumpしない。
+- RC13の無修飾`Up`/`Down`救済経路は維持。診断用の強制ログは追加しない。
+
+## [1.1.0-rc14] - 2026-09-15
+
+### Changed
+- RC13で実機PASSした「true backgroundで0件選択 + Selector本体focus」時の最初のUp/Down補正をそのまま維持。
+- RC12/RC13の強制keyboard-navigation診断ログを撤去し、通常のDebug Logging設定へ復帰。
+- application behaviorはRC13から変更せず、release-candidate hygieneと回帰確認に限定。
+
+## [1.1.0-rc13] - 2026-09-15
+
+### Fixed
+- true-backgroundで0件選択にした後、Selector本体にkeyboard focusがある状態で`Up`/`Down`を押すとviewport端へjumpする経路を局所修正。
+- 最後にkeyboard focusを持っていたitemをFerry側で追跡し、選択0件 + Selector focus時の最初の`Up`/`Down`だけをFerryが決定的に処理する。
+- その後はitem focus / selection / WPF private anchor/currentを同期し、通常のWPF keyboard navigationへ戻す。
+- Rubber-band / Selection Anchor / List↔Grid sync / autoscroll / Breadcrumb等の既存挙動は変更しない。
+
+## [1.1.0-rc12] - 2026-09-15
+
+### Diagnostic
+- true-background clear後に最初の`Down`で末尾へjumpする経路を診断するため、keyboard focus / WPF AnchorItem / LastActionItem / CollectionView CurrentItemをログ出力する診断版。
+- RC11の動作は維持し、選択ロジックそのものには追加修正を入れていない。
+- RC12では`Ferry.log`を必ず生成する（diagnostic build限定）。
+
+## [1.1.0-rc11] - 2026-09-15
+
+### Fixed
+- Fixed a remaining keyboard-navigation jump path after a plain true-background click clears selection.
+- A stationary true-background click now restores the previously focused realized item as keyboard current while keeping selection empty.
+- Actual rubber-band drags keep the validated v1.1.0 behavior unchanged.
+
+## [1.1.0] - 2026-09-15
+
+### Added
+- Explorer-style rubber-band selection for List and Grid, including validated Ctrl / Shift / Ctrl+Shift behavior and edge autoscroll.
+- Selection Anchor visualization and configurable rubber-band autoscroll speed (30–300, default 100).
+- Sidebar divider double-click auto-fit.
+
+### Changed
+- `Ctrl+L` Location Box can return to Breadcrumb via `Esc`, a second `Ctrl+L`, or file-view mouse interaction.
+- Toolbar icon buttons are standardized to 30×30 and the path row no longer changes height between Breadcrumb and Location Box.
+- Breadcrumb overflow uses a dedicated 10px horizontal scrollbar with always-visible line buttons. Final chrome is rectangular for consistency with Ferry's square controls.
+- List/Grid selection synchronization and keyboard-current handling were hardened for large folders.
+
+### Fixed
+- Prevented scrollbar double-clicks from opening the currently selected item.
+- Prevented row-whitespace keyboard navigation from jumping to the top/bottom in large virtualized folders.
+
+## [1.1.0-rc10] - 2026-09-15
+
+### Changed
+- Breadcrumb専用horizontal scrollbarのthumbと左右end buttonのcorner radiusを2pxから**5px**へ拡大し、より楕円的で視認しやすい外観へ調整。
+- 10px高さ、常時表示end button、gray chrome、固定path-host高さなどRC9で確定したBreadcrumb scrollbar仕様は維持。
+- Toolbar 30×30 square button、Location Box、rubber-band / selection / autoscroll等の挙動は変更なし。
+
+## [1.1.0-rc9] - 2026-09-15
+
+### Changed
+- Breadcrumb専用horizontal scrollbarの高さを8pxから10pxへ拡大し、thumbを掴みやすくした。
+- Breadcrumb scrollbarのthumbと左右end buttonに2pxのcorner radiusを追加し、軽い角丸へ変更。
+- RC8で導入したend button常時表示とnormal / hover / pressedの濃度差は維持。
+- Toolbar 30×30 square button、Location Box、rubber-band / selection / autoscroll等の挙動は変更なし。
+
+## [1.1.0-rc8] - 2026-09-15
+
+### Changed
+- Breadcrumbの8px horizontal scrollbar両端にある左右移動buttonを、mouse hover前から常時見える専用chromeへ変更。
+- End buttonはscrollbar本体より一段濃いgrayを通常色とし、hover / pressedで段階的に濃くなる。
+- 8px scrollbar、Toolbar 30×30 square button、固定path-host高さなどRC7のlayoutは維持。
+
+## [1.1.0-rc7] - 2026-09-15
+
+### Changed
+- Breadcrumb用horizontal scrollbarを約8pxへ縮小し、List/Grid側の標準scrollbarには影響しないよう局所化。
+- Toolbarのicon button（Back / Forward / Up / Home / New tab / List / Grid / Settings / Search clear）を30×30の正方形へ統一。
+- Search mode / Search box / Location Boxも30px高へ揃え、RC6のScrollbar分でbuttonが縦に伸びる見た目を解消。
+- Breadcrumb / Location Box共通hostは30px + 8px scrollbar分の固定高さとし、長いpath表示と高さ固定を両立。
+
+## [1.1.0-rc6] - 2026-09-15
+
+### Fixed
+- Restored the Breadcrumb horizontal scrollbar while keeping the path row at a constant height.
+- Reserved one horizontal-scrollbar row in the fixed path-host height so long Breadcrumbs remain fully visible vertically.
+
+## [1.1.0-rc5] - 2026-09-15
+
+### Fixed
+- Fixed Breadcrumb content being clipped/hidden when the path host was fixed to the Location Box height.
+- Breadcrumb horizontal overflow no longer consumes vertical toolbar space; long paths keep the current-location side visible.
+
+## v1.1.0 RC4 — 2026-09-15
+
+Final toolbar-layout polish candidate following the Windows PASS of v1.1.0 RC3.
+
+- Fixes the toolbar/path-row height to the Location Box height so toggling between Breadcrumb and Ctrl+L does not resize the menu/toolbar vertically.
+- Keeps the Location Box hidden (rather than collapsed) while Breadcrumb is shown so its desired height remains available to layout.
+- Constrains the path host to that measured height; Breadcrumb horizontal scrolling must fit inside the same row instead of growing the toolbar.
+- Promotes version metadata to `1.1.0-rc4`; all RC3 interaction behavior is otherwise unchanged.
+
+
+## v1.1.0 RC3 — 2026-09-15
+
+Focused interaction-polish candidate following the Windows PASS of v1.1.0 RC2.
+
+- Keeps RC2 Location Box dismissal behavior unchanged.
+- Restores the Prototype 27 Selection Anchor dash rhythm (`1,1`) while retaining RC2's softer dark-gray `#707070` stroke.
+- Expands **Rubber-band autoscroll speed** to **30–300**, default **100**.
+- Makes the speed setting scale the full acceleration curve, so 50 / 100 / 200 / 300 are perceptibly different at the same pointer distance; 100 preserves the validated previous curve.
+- Adds Explorer-like Sidebar auto-fit: double-clicking the Sidebar/file-view splitter fits the Sidebar to its displayed labels, within the existing 50–480 width limits, and persists the resulting width.
+- Promotes version metadata to `1.1.0-rc3`; final release remains pending Windows RC3 validation.
+
+## v1.1.0 RC2 — 2026-09-15
+
+UX-polish release candidate following the Windows PASS of v1.1.0 RC1.
+
+- Dismisses the temporary `Ctrl+L` Location Box when the user interacts with the List/Grid file view; the mouse gesture continues normally and the Breadcrumb is restored.
+- Softens the Selection Anchor indicator for lower-resolution displays: dark gray 1 px stroke with a more widely spaced dashed pattern.
+- Adds **Rubber-band autoscroll speed** to Settings with a configurable range of **30–150** and default **100**.
+- Keeps the validated near-edge acceleration curve; the chosen setting controls the maximum speed.
+- Promotes version metadata to `1.1.0-rc2`; final release remains pending Windows RC2 validation.
+
+
+## v1.1.0 RC1 — 2026-09-15
+
+Release candidate for the v1.1.0 selection/navigation update.
+
+- Adds Explorer-style rubber-band/marquee selection in List and Grid views.
+- Adds validated Ctrl/Shift/Ctrl+Shift rubber-band behavior, edge autoscroll, List/Grid selection synchronization, and Selection Anchor visualization.
+- Fixes selected-item activation from rapid scrollbar double-clicks.
+- Keeps keyboard focus/current item aligned for Ferry-owned row/tile whitespace clicks and Shift range endpoints.
+- `Ctrl+L` can now be exited with `Esc` or a second `Ctrl+L`, restoring Breadcrumb view without clearing the current file selection.
+- Promotes version metadata to `1.1.0-rc1`; final release remains pending Windows RC validation.
+
 ## v1.0.2 — 2026-09-13
 
 Ferry v1.0.2 replaces the previous Windows-delegated ZIP workflow with a Ferry-owned ZIP workflow built on .NET `System.IO.Compression`.

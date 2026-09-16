@@ -1,35 +1,30 @@
-﻿# Ferry v1.0.0をGitHubで初公開する手順
+# Ferry v1.1.0 GitHub正式リリース手順
 
-対象アカウント: `kazu0m1`  
-Repository: `Ferry`
+対象Repository: `kazu0m1/Ferry`  
+正式版: `v1.1.0`
 
-## 1. Repositoryを作成
+この文書は**現行版の公開手順**です。v1.0.xの公開手順は履歴資料として別文書に残します。
 
-GitHubで **New repository** を選びます。
+## 1. 最終Sourceをmainへ反映
 
-推奨値:
+GitHub DesktopまたはGitで差分を確認し、次を確認します。
 
-- Repository name: `Ferry`
-- Description: `A lightweight Windows file manager for people who miss the simplicity of Nautilus.`
-- Visibility: **Public**
-- README / .gitignore / license の自動追加: **しない**（このSource一式に含まれています）
+- Window titleが`Ferry`
+- `AssemblyInformationalVersion`が`1.1.0`
+- `Make-PortableRelease.cmd`の`VERSION=1.1.0`
+- RC用文書がRepository rootではなく`docs/dev-history/releases/v1.1.0/`へ整理されている
+- `Portable/README.txt`の先頭が`Ferry v1.1.0 Portable`
+- Bug report templateのVersion例が`v1.1.0`
 
-## 2. 正式版Sourceをpush
-
-Gitを使う場合の例:
+Commit例:
 
 ```text
-git init
-git add .
-git commit -m "Ferry v1.0.0 public release"
-git branch -M main
-git remote add origin https://github.com/kazu0m1/Ferry.git
-git push -u origin main
+Release Ferry v1.1.0
 ```
 
-GitHub Desktopを使う場合は、このフォルダーを既存ローカルRepositoryとして追加し、`kazu0m1/Ferry`へPublishしても構いません。
+その後、`main`へpushします。
 
-## 3. Windowsで正式版をビルド
+## 2. Windowsで最終ビルド
 
 Repository rootで、
 
@@ -39,11 +34,16 @@ Build.cmd
 
 を実行します。
 
-`Portable\Ferry.exe`が生成されたら、一度起動してHomeが正常に表示されることを確認します。
+最低限、次を確認します。
 
-RC15では最終スモークテスト19/19を完了済みです。正式版ではロジック変更をしていないため、ここでは長い再テストは不要です。
+- `Portable\Ferry.exe`が生成される
+- 起動できる
+- Window titleが`Ferry`
+- Settings / AboutのVersionが`1.1.0`
 
-## 4. GitHub Release用Portable ZIPを生成
+詳細はRepository rootの`FINAL_RELEASE_CHECKLIST_JA.md`に従います。
+
+## 3. GitHub Release用Portable ZIPを生成
 
 ```text
 Make-PortableRelease.cmd
@@ -52,46 +52,67 @@ Make-PortableRelease.cmd
 成功すると、
 
 ```text
-dist\Ferry-v1.0.0-win-portable.zip
+dist\Ferry-v1.1.0-win-portable.zip
 ```
 
-が生成され、SHA-256が画面に表示されます。
+が生成され、SHA-256がコンソールに表示されます。
 
-## 5. Binary ZIPを最後に1回だけ確認
+## 4. 生成ZIPをfresh folderで確認
 
-生成されたZIPを**別の新しいフォルダー**へ展開し、`Ferry.exe`を起動します。
+生成したZIPを、ビルド元とは別の新しいフォルダーへ展開して`Ferry.exe`を起動します。
 
-最低限、次だけ確認します。
+最低限、次を確認します。
 
 - Ferryが起動する
 - Homeが開く
-- F12で現在フォルダーにTerminalが開く
-- Settingsを開ける
+- Aboutが`1.1.0`
+- List / Gridが切り替わる
+- Rubber-band selectionが動く
+- `Ctrl+L` → `Esc`でBreadcrumbへ戻る
+- Settingsが開く
+- 既存v1.0.2系`settings.json`を使っても起動でき、Rubber-band autoscroll speedの欠損値が100になる
 
-問題なければ、そのZIPをGitHub Release assetとして使用します。
+## 5. 最終SHA-256を保存
+
+`Make-PortableRelease.cmd`が表示したSHA-256を、Release本文またはRelease作業メモへ保存します。
+
+必要ならPowerShellでも再確認できます。
+
+```powershell
+Get-FileHash -Algorithm SHA256 .\dist\Ferry-v1.1.0-win-portable.zip
+```
 
 ## 6. Tag / Releaseを作成
 
 GitHub Repository → **Releases** → **Create a new release**。
 
-- Tag: `v1.0.0`
-- Release title: `Ferry v1.0.0`
-- Description: `RELEASE_NOTES_v1.0.0.md`を使用
-- Asset: `dist\Ferry-v1.0.0-win-portable.zip`
-- SHA-256: `Make-PortableRelease.cmd`が表示した値をRelease本文の末尾へ追記
+- Tag: `v1.1.0`
+- Target: 最終Sourceを含む`main`のcommit
+- Release title: `Ferry v1.1.0`
+- Description: `RELEASE_NOTES_v1.1.0.md`を使用
+- Asset: `Ferry-v1.1.0-win-portable.zip`
+- Pre-release: **OFF**
+- Latest release: **ON / 通常の正式Releaseとして公開**
 
-**Pre-release**にはチェックを入れません。
+Release本文末尾にSHA-256を追記しても構いません。
 
 ## 7. 公開直後の確認
 
-- READMEトップが意図どおり表示される
-- `README.ja.md`へのリンクが動く
-- Release ZIPをダウンロードできる
-- Release本文とTagが`v1.0.0`になっている
-- 新規フォルダーへ展開して`Ferry.exe`を起動できる
-- Issuesが利用できる
-- GNOME公式プロジェクトと誤認させる表現・ロゴがない
+- READMEトップのCurrent releaseが`v1.1.0`
+- READMEの直接Downloadリンクが開く
+- `Ferry-v1.1.0-win-portable.zip`を取得できる
+- Tag / Release title / Aboutがすべて`v1.1.0`
+- Release ZIPをfresh folderへ展開して起動できる
+- IssuesのBug report templateに`v1.1.0`が表示される
+- Source treeのrootにRC資料が散らばっていない
 
-## 8. 公開後
+## 8. 任意の公開品質項目
 
-まずGitHub Releasesで利用者・Issue・実機環境差の情報を集めます。wingetやMicrosoft Storeはv1.0.0公開後の別フェーズで検討すれば十分です。
+以下はv1.1.0公開の必須条件ではありません。
+
+- Windows code signing certificateで`Ferry.exe`へ署名するか
+- READMEのメインスクリーンショットをv1.1.0完成画面へ差し替えるか
+- Ubuntu日本語コミュニティ等へ紹介するか
+- winget等のpackage manager登録を後続Versionで行うか
+
+署名しない場合でもFerryは公開できますが、未知のpublisherとしてWindows側の警告が出る可能性があります。
