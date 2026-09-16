@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace Ferry
 {
@@ -206,6 +207,250 @@ namespace Ferry
             {
                 Decision = ArchiveOverwriteDecision.Cancel
             });
+        }
+
+        private void BeginArchiveOperation(string label)
+        {
+            if (archiveCancellation != null)
+            {
+                try { archiveCancellation.Dispose(); } catch { }
+            }
+            archiveCancellation = new System.Threading.CancellationTokenSource();
+            archiveOperationActive = true;
+            archiveOperationLabel = string.IsNullOrEmpty(label) ? "Archive operation" : label;
+            archiveProgressInfo = new ArchiveProgressInfo { Phase = ArchivePhase.Scanning, CurrentItem = "Preparing..." };
+            UpdateStatus();
+        }
+
+        private void CancelArchiveOperation()
+        {
+            if (!archiveOperationActive || archiveCancellation == null) return;
+            if (!archiveCancellation.IsCancellationRequested) archiveCancellation.Cancel();
+            if (archiveCancelButton != null) archiveCancelButton.IsEnabled = false;
+            if (statusText != null) statusText.Text = "Cancelling archive operation...";
+        }
+
+        private void UpdateArchiveProgress(ArchiveProgressInfo info)
+        {
+            if (!archiveOperationActive || info == null) return;
+            archiveProgressInfo = info;
+            UpdateStatus();
+        }
+
+        private void EndArchiveOperation(string completionMessage)
+        {
+            archiveOperationActive = false;
+            archiveProgressInfo = null;
+            archiveOperationLabel = null;
+            if (archiveCancellation != null)
+            {
+                try { archiveCancellation.Dispose(); } catch { }
+                archiveCancellation = null;
+            }
+            if (archiveCancelButton != null)
+            {
+                archiveCancelButton.Visibility = Visibility.Collapsed;
+                archiveCancelButton.IsEnabled = true;
+            }
+            if (statusProgress != null)
+            {
+                statusProgress.Visibility = Visibility.Collapsed;
+                statusProgress.IsIndeterminate = false;
+                statusProgress.Value = 0;
+            }
+            if (closeAfterArchiveCancellation)
+            {
+                closeAfterArchiveCancellation = false;
+                Dispatcher.BeginInvoke(new Action(Close));
+                return;
+            }
+            if (!string.IsNullOrEmpty(completionMessage))
+            {
+                ShowTimedStatusMessage(completionMessage, 3500);
+                return;
+            }
+            UpdateStatus();
+        }
+
+        private void ShowTimedStatusMessage(string message, int milliseconds)
+        {
+            transientStatusMessage = message ?? string.Empty;
+            transientStatusUntilUtc = DateTime.UtcNow.AddMilliseconds(Math.Max(1, milliseconds));
+            if (transientStatusTimer == null)
+            {
+                transientStatusTimer = new DispatcherTimer(DispatcherPriority.Background);
+                transientStatusTimer.Tick += delegate
+                {
+                    if (DateTime.UtcNow < transientStatusUntilUtc) return;
+                    transientStatusTimer.Stop();
+                    transientStatusMessage = null;
+                    UpdateStatus();
+                };
+            }
+            transientStatusTimer.Stop();
+            transientStatusTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, milliseconds));
+            transientStatusTimer.Start();
+            UpdateStatus();
+        }
+
+        private bool ShowTransientStatusMessage()
+        {
+            if (string.IsNullOrEmpty(transientStatusMessage)) return false;
+            if (DateTime.UtcNow >= transientStatusUntilUtc)
+            {
+                transientStatusMessage = null;
+                if (transientStatusTimer != null) transientStatusTimer.Stop();
+                return false;
+            }
+            HideArchiveStatusControls();
+            if (statusText != null)
+            {
+                statusText.Text = transientStatusMessage;
+                statusText.ToolTip = transientStatusMessage;
+            }
+            return true;
+        }
+
+        private bool ShowArchiveActivityStatus()
+        {
+            if (!archiveOperationActive) return false;
+
+            ArchiveProgressInfo info = archiveProgressInfo;
+            string label = FormatArchiveProgressStatus(info);
+            if (statusText != null)
+            {
+                statusText.Text = label;
+                statusText.ToolTip = label;
+            }
+
+            if (statusProgress != null)
+            {
+                statusProgress.Visibility = Visibility.Visible;
+                bool indeterminate = info == null || info.Phase == ArchivePhase.Scanning || info.Phase == ArchivePhase.WaitingForConfirmation;
+                statusProgress.IsIndeterminate = indeterminate;
+                if (!indeterminate) statusProgress.Value = info == null ? 0 : info.OverallPercent;
+            }
+
+            if (archiveCancelButton != null)
+            {
+                archiveCancelButton.Visibility = Visibility.Visible;
+                archiveCancelButton.IsEnabled = archiveCancellation != null && !archiveCancellation.IsCancellationRequested;
+            }
+            return true;
+        }
+
+        private void HideArchiveStatusControls()
+        {
+            if (statusProgress != null)
+            {
+                statusProgress.Visibility = Visibility.Collapsed;
+                statusProgress.IsIndeterminate = false;
+            }
+            if (archiveCancelButton != null)
+            {
+                archiveCancelButton.Visibility = Visibility.Collapsed;
+                archiveCancelButton.IsEnabled = true;
+            }
+        }
+
+        private string FormatArchiveProgressStatus(ArchiveProgressInfo info)
+        {
+            if (info == null) return (archiveOperationLabel ?? "Archive operation") + "...";
+
+            string phase;
+            switch (info.Phase)
+            {
+                case ArchivePhase.Scanning: phase = "Scanning"; break;
+                case ArchivePhase.WaitingForConfirmation: phase = "Waiting for confirmation"; break;
+                case ArchivePhase.Compressing: phase = "Compressing"; break;
+                case ArchivePhase.Extracting: phase = "Extracting"; break;
+                case ArchivePhase.Finalizing: phase = "Finalizing"; break;
+                case ArchivePhase.Cancelled: phase = "Cancelling"; break;
+                default: phase = archiveOperationLabel ?? "Archive operation"; break;
+            }
+
+            StringBuilder builder = new StringBuilder(phase);
+            if (!string.IsNullOrEmpty(info.CurrentItem) &&
+                info.Phase != ArchivePhase.Scanning &&
+                info.Phase != ArchivePhase.WaitingForConfirmation &&
+                info.Phase != ArchivePhase.Finalizing)
+            {
+                builder.Append(" — ");
+                builder.Append(info.CurrentItem);
+            }
+            if (info.TotalBytes > 0)
+            {
+                builder.Append("  •  ");
+                builder.Append(FormatArchiveBytes(info.ProcessedBytes));
+                builder.Append(" / ");
+                builder.Append(FormatArchiveBytes(info.TotalBytes));
+                builder.Append(" (");
+                builder.Append(info.OverallPercent.ToString("F0"));
+                builder.Append("%)");
+            }
+            else if (info.TotalFiles > 0)
+            {
+                builder.Append("  •  Files ");
+                builder.Append(info.ProcessedFiles.ToString("N0"));
+                builder.Append(" / ");
+                builder.Append(info.TotalFiles.ToString("N0"));
+            }
+
+            if (info.TotalFiles > 0 && info.TotalBytes > 0)
+            {
+                builder.Append("  •  Files ");
+                builder.Append(info.ProcessedFiles.ToString("N0"));
+                builder.Append(" / ");
+                builder.Append(info.TotalFiles.ToString("N0"));
+            }
+
+            if (info.BytesPerSecond > 0)
+            {
+                builder.Append("  •  ");
+                builder.Append(FormatArchiveBytes((long)info.BytesPerSecond));
+                builder.Append("/s");
+                if (info.EstimatedRemaining.HasValue)
+                {
+                    builder.Append("  •  Remaining ");
+                    builder.Append(FormatArchiveEta(info.EstimatedRemaining.Value));
+                }
+            }
+            else if (info.Phase == ArchivePhase.Compressing || info.Phase == ArchivePhase.Extracting)
+            {
+                builder.Append("  •  Remaining calculating...");
+            }
+
+            return builder.ToString();
+        }
+
+        private static string FormatArchiveBytes(long bytes)
+        {
+            if (bytes < 0) bytes = 0;
+            double value = bytes;
+            string[] units = new string[] { "B", "KiB", "MiB", "GiB", "TiB" };
+            int unit = 0;
+            while (value >= 1024.0 && unit < units.Length - 1)
+            {
+                value /= 1024.0;
+                unit++;
+            }
+            if (unit == 0) return ((long)value).ToString("N0") + " " + units[unit];
+            return value.ToString(value >= 100 ? "F0" : value >= 10 ? "F1" : "F2") + " " + units[unit];
+        }
+
+        private static string FormatArchiveEta(TimeSpan value)
+        {
+            if (value < TimeSpan.Zero) value = TimeSpan.Zero;
+            if (value.TotalSeconds < 60) return Math.Ceiling(value.TotalSeconds).ToString("F0") + " sec";
+            if (value.TotalMinutes < 60) return Math.Ceiling(value.TotalMinutes).ToString("F0") + " min";
+            return ((int)value.TotalHours).ToString() + "h " + value.Minutes.ToString() + "m";
+        }
+
+        private static string FormatArchiveRatio(double ratio)
+        {
+            if (double.IsInfinity(ratio)) return "∞";
+            if (double.IsNaN(ratio)) return "n/a";
+            return ratio.ToString("N1") + "×";
         }
     }
 }
