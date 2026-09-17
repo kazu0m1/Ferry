@@ -29,7 +29,7 @@
     <Compile Include="SettingsStore.cs" />
     <Compile Include="ArchiveHelper.cs" />
     <Compile Include="ArchiveConflictModels.cs" />
-    <Compile Include="ArchiveModels.cs" />
+    <Compile Include="ArchiveResultModels.cs" />
     <Compile Include="ArchiveProgressModels.cs" />
     <Compile Include="ArchiveSafetyModels.cs" />
     <Compile Include="ArchiveService.cs" />
