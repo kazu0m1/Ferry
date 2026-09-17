@@ -60,6 +60,7 @@
     <Compile Include="RenameUndoRecord.cs" />
     <Compile Include="RecycleBinEntry.cs" />
     <Compile Include="RecycleBinService.cs" />
+    <Compile Include="RecycleBinService.Enumeration.cs" />
     <Compile Include="SearchRequest.cs" />
     <Compile Include="SearchService.cs" />
     <Compile Include="SettingsWindow.cs" />
