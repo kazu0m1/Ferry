@@ -63,7 +63,7 @@
     <Compile Include="RecycleBinService.Enumeration.cs" />
     <Compile Include="SearchRequest.cs" />
     <Compile Include="SearchService.cs" />
-    <Compile Include="SettingsWindow.cs" />
+    <Compile Include="SettingsWindow.UI.cs" />
     <Compile Include="SettingsWindow.Persistence.cs" />
     <Compile Include="ShellContextMenu.cs" />
     <Compile Include="ShellFileOperations.cs" />
