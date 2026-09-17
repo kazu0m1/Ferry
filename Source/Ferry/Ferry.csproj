@@ -37,7 +37,7 @@
     <Compile Include="CreateZipSetupWindow.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ClipboardHelper.cs" />
-    <Compile Include="ChoiceDialog.cs" />
+    <Compile Include="ChoiceDialog.Standard.cs" />
     <Compile Include="ChoiceDialog.ArchiveConflict.cs" />
     <Compile Include="ChoiceDialogResult.cs" />
     <Compile Include="FileItem.cs" />
