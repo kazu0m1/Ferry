@@ -165,10 +165,4 @@ namespace Ferry
             public MoveRecord(string s, string t, string d) { SourcePath = s; TempPath = t; TargetPath = d; }
         }
     }
-
-    internal sealed class RenameUndoRecord
-    {
-        public string OriginalPath; public string NewPath;
-        public RenameUndoRecord(string original, string newer) { OriginalPath = original; NewPath = newer; }
-    }
 }

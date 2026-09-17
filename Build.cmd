@@ -61,27 +61,45 @@ echo Building Ferry.exe...
  /reference:"%WPF_DIR%\PresentationCore.dll" ^
  /reference:"%WPF_DIR%\PresentationFramework.dll" ^
  "Source\Ferry\AppSettings.cs" ^
+ "Source\Ferry\SettingsStore.cs" ^
  "Source\Ferry\ArchiveHelper.cs" ^
- "Source\Ferry\ArchiveModels.cs" ^
+ "Source\Ferry\ArchiveConflictModels.cs" ^
+ "Source\Ferry\ArchiveResultModels.cs" ^
+ "Source\Ferry\ArchiveProgressModels.cs" ^
+ "Source\Ferry\ArchiveSafetyModels.cs" ^
  "Source\Ferry\ArchiveService.cs" ^
- "Source\Ferry\ArchiveSetupWindows.cs" ^
+ "Source\Ferry\ExtractZipSetupWindow.cs" ^
+ "Source\Ferry\CreateZipSetupWindow.cs" ^
  "Source\Ferry\AssemblyInfo.cs" ^
  "Source\Ferry\ClipboardHelper.cs" ^
- "Source\Ferry\ChoiceDialog.cs" ^
+ "Source\Ferry\ChoiceDialog.Standard.cs" ^
+ "Source\Ferry\ChoiceDialog.ArchiveConflict.cs" ^
+ "Source\Ferry\ChoiceDialogResult.cs" ^
  "Source\Ferry\FileItem.cs" ^
  "Source\Ferry\FileItemComparer.cs" ^
  "Source\Ferry\KnownFolders.cs" ^
  "Source\Ferry\Logger.cs" ^
  "Source\Ferry\MainWindow.cs" ^
+ "Source\Ferry\MainWindow.Archive.cs" ^
+ "Source\Ferry\MainWindow.Converters.cs" ^
+ "Source\Ferry\MainWindow.PasteFeedback.cs" ^
+ "Source\Ferry\MainWindow.Sidebar.cs" ^
+ "Source\Ferry\MainWindow.TabViewContext.cs" ^
+ "Source\Ferry\MainWindow.UI.cs" ^
  "Source\Ferry\NaturalStringComparer.cs" ^
  "Source\Ferry\Program.cs" ^
  "Source\Ferry\PromptDialog.cs" ^
  "Source\Ferry\RenameDialog.cs" ^
  "Source\Ferry\RenameEngine.cs" ^
  "Source\Ferry\RenameEntry.cs" ^
- "Source\Ferry\RecycleBinService.cs" ^
+ "Source\Ferry\RenameUndoRecord.cs" ^
+ "Source\Ferry\RecycleBinEntry.cs" ^
+ "Source\Ferry\RecycleBinService.Operations.cs" ^
+ "Source\Ferry\RecycleBinService.Enumeration.cs" ^
+ "Source\Ferry\SearchRequest.cs" ^
  "Source\Ferry\SearchService.cs" ^
- "Source\Ferry\SettingsWindow.cs" ^
+ "Source\Ferry\SettingsWindow.UI.cs" ^
+ "Source\Ferry\SettingsWindow.Persistence.cs" ^
  "Source\Ferry\ShellContextMenu.cs" ^
  "Source\Ferry\ShellFileOperations.cs" ^
  "Source\Ferry\ShellFolderPicker.cs" ^
