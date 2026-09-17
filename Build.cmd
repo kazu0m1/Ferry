@@ -63,6 +63,7 @@ echo Building Ferry.exe...
  "Source\Ferry\AppSettings.cs" ^
  "Source\Ferry\SettingsStore.cs" ^
  "Source\Ferry\ArchiveHelper.cs" ^
+ "Source\Ferry\ArchiveConflictModels.cs" ^
  "Source\Ferry\ArchiveModels.cs" ^
  "Source\Ferry\ArchiveSafetyModels.cs" ^
  "Source\Ferry\ArchiveService.cs" ^
