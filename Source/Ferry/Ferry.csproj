@@ -33,7 +33,7 @@
     <Compile Include="ArchiveProgressModels.cs" />
     <Compile Include="ArchiveSafetyModels.cs" />
     <Compile Include="ArchiveService.cs" />
-    <Compile Include="ArchiveSetupWindows.cs" />
+    <Compile Include="ExtractZipSetupWindow.cs" />
     <Compile Include="CreateZipSetupWindow.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ClipboardHelper.cs" />
