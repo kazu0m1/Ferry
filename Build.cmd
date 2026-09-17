@@ -72,7 +72,7 @@ echo Building Ferry.exe...
  "Source\Ferry\CreateZipSetupWindow.cs" ^
  "Source\Ferry\AssemblyInfo.cs" ^
  "Source\Ferry\ClipboardHelper.cs" ^
- "Source\Ferry\ChoiceDialog.cs" ^
+ "Source\Ferry\ChoiceDialog.Standard.cs" ^
  "Source\Ferry\ChoiceDialog.ArchiveConflict.cs" ^
  "Source\Ferry\ChoiceDialogResult.cs" ^
  "Source\Ferry\FileItem.cs" ^
