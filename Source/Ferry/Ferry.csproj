@@ -26,6 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppSettings.cs" />
+    <Compile Include="SettingsStore.cs" />
     <Compile Include="ArchiveHelper.cs" />
     <Compile Include="ArchiveModels.cs" />
     <Compile Include="ArchiveService.cs" />

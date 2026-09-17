@@ -61,6 +61,7 @@ echo Building Ferry.exe...
  /reference:"%WPF_DIR%\PresentationCore.dll" ^
  /reference:"%WPF_DIR%\PresentationFramework.dll" ^
  "Source\Ferry\AppSettings.cs" ^
+ "Source\Ferry\SettingsStore.cs" ^
  "Source\Ferry\ArchiveHelper.cs" ^
  "Source\Ferry\ArchiveModels.cs" ^
  "Source\Ferry\ArchiveService.cs" ^
