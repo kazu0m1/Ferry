@@ -9,14 +9,6 @@ using System.Threading.Tasks;
 
 namespace Ferry
 {
-    internal sealed class SearchRequest
-    {
-        public string RootPath;
-        public string Query;
-        public string Mode;
-        public bool ShowHidden;
-    }
-
     internal static class SearchService
     {
         private static readonly CompareInfo JapaneseCompare = CultureInfo.GetCultureInfo("ja-JP").CompareInfo;

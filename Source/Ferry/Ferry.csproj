@@ -53,6 +53,7 @@
     <Compile Include="RenameEntry.cs" />
     <Compile Include="RecycleBinEntry.cs" />
     <Compile Include="RecycleBinService.cs" />
+    <Compile Include="SearchRequest.cs" />
     <Compile Include="SearchService.cs" />
     <Compile Include="SettingsWindow.cs" />
     <Compile Include="ShellContextMenu.cs" />
