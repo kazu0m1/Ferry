@@ -86,6 +86,7 @@ echo Building Ferry.exe...
  "Source\Ferry\RenameDialog.cs" ^
  "Source\Ferry\RenameEngine.cs" ^
  "Source\Ferry\RenameEntry.cs" ^
+ "Source\Ferry\RenameUndoRecord.cs" ^
  "Source\Ferry\RecycleBinEntry.cs" ^
  "Source\Ferry\RecycleBinService.cs" ^
  "Source\Ferry\SearchRequest.cs" ^
