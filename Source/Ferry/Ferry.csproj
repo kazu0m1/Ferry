@@ -64,6 +64,7 @@
     <Compile Include="SearchRequest.cs" />
     <Compile Include="SearchService.cs" />
     <Compile Include="SettingsWindow.cs" />
+    <Compile Include="SettingsWindow.Persistence.cs" />
     <Compile Include="ShellContextMenu.cs" />
     <Compile Include="ShellFileOperations.cs" />
     <Compile Include="ShellFolderPicker.cs" />
