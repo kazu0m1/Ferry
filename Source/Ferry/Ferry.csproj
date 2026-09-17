@@ -38,6 +38,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ClipboardHelper.cs" />
     <Compile Include="ChoiceDialog.cs" />
+    <Compile Include="ChoiceDialogResult.cs" />
     <Compile Include="FileItem.cs" />
     <Compile Include="FileItemComparer.cs" />
     <Compile Include="KnownFolders.cs" />
