@@ -99,6 +99,7 @@ echo Building Ferry.exe...
  "Source\Ferry\SearchRequest.cs" ^
  "Source\Ferry\SearchService.cs" ^
  "Source\Ferry\SettingsWindow.cs" ^
+ "Source\Ferry\SettingsWindow.Persistence.cs" ^
  "Source\Ferry\ShellContextMenu.cs" ^
  "Source\Ferry\ShellFileOperations.cs" ^
  "Source\Ferry\ShellFolderPicker.cs" ^
