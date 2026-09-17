@@ -42,7 +42,7 @@
     <Compile Include="MainWindow.Converters.cs" />
     <Compile Include="MainWindow.PasteFeedback.cs" />
     <Compile Include="MainWindow.Sidebar.cs" />
-    <Compile Include="MainWindow.Types.cs" />
+    <Compile Include="MainWindow.TabViewContext.cs" />
     <Compile Include="MainWindow.UI.cs" />
     <Compile Include="NaturalStringComparer.cs" />
     <Compile Include="Program.cs" />
