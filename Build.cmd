@@ -74,6 +74,7 @@ echo Building Ferry.exe...
  "Source\Ferry\Logger.cs" ^
  "Source\Ferry\MainWindow.cs" ^
  "Source\Ferry\MainWindow.Archive.cs" ^
+ "Source\Ferry\MainWindow.PasteFeedback.cs" ^
  "Source\Ferry\MainWindow.Sidebar.cs" ^
  "Source\Ferry\MainWindow.Types.cs" ^
  "Source\Ferry\MainWindow.UI.cs" ^

@@ -26,24 +26,6 @@ namespace Ferry
             }
         }
 
-        private sealed class PasteEntryStamp
-        {
-            public bool IsDirectory;
-            public long Length;
-            public long LastWriteUtcTicks;
-            public long CreationUtcTicks;
-        }
-
-        private sealed class PasteFeedbackSession
-        {
-            public string Destination;
-            public List<string> SourcePaths;
-            public HashSet<string> SourceDirectoryPaths;
-            public Dictionary<string, PasteEntryStamp> Before;
-            public bool OperationFinished;
-            public bool OperationCompleted;
-        }
-
         private sealed class TabViewContext
         {
             public TabState State; public TabItem TabItem; public Grid Container; public ListView ListView; public ListBox GridView; public GridView ListGrid; public FileSystemWatcher Watcher; public DispatcherTimer RefreshTimer; public DispatcherTimer SearchDrainTimer; public CancellationTokenSource GridThumbnailCancellation;
