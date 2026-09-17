@@ -56,7 +56,6 @@
     <Compile Include="PromptDialog.cs" />
     <Compile Include="RenameDialog.cs" />
     <Compile Include="RenameEngine.cs" />
-    <Compile Include="RenameEngine.Execution.cs" />
     <Compile Include="RenameEntry.cs" />
     <Compile Include="RenameUndoRecord.cs" />
     <Compile Include="RecycleBinEntry.cs" />
