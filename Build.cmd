@@ -77,7 +77,7 @@ echo Building Ferry.exe...
  "Source\Ferry\MainWindow.Converters.cs" ^
  "Source\Ferry\MainWindow.PasteFeedback.cs" ^
  "Source\Ferry\MainWindow.Sidebar.cs" ^
- "Source\Ferry\MainWindow.Types.cs" ^
+ "Source\Ferry\MainWindow.TabViewContext.cs" ^
  "Source\Ferry\MainWindow.UI.cs" ^
  "Source\Ferry\NaturalStringComparer.cs" ^
  "Source\Ferry\Program.cs" ^
