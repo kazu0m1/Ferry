@@ -68,7 +68,7 @@ echo Building Ferry.exe...
  "Source\Ferry\ArchiveProgressModels.cs" ^
  "Source\Ferry\ArchiveSafetyModels.cs" ^
  "Source\Ferry\ArchiveService.cs" ^
- "Source\Ferry\ArchiveSetupWindows.cs" ^
+ "Source\Ferry\ExtractZipSetupWindow.cs" ^
  "Source\Ferry\CreateZipSetupWindow.cs" ^
  "Source\Ferry\AssemblyInfo.cs" ^
  "Source\Ferry\ClipboardHelper.cs" ^
