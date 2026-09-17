@@ -73,6 +73,7 @@ echo Building Ferry.exe...
  "Source\Ferry\AssemblyInfo.cs" ^
  "Source\Ferry\ClipboardHelper.cs" ^
  "Source\Ferry\ChoiceDialog.cs" ^
+ "Source\Ferry\ChoiceDialogResult.cs" ^
  "Source\Ferry\FileItem.cs" ^
  "Source\Ferry\FileItemComparer.cs" ^
  "Source\Ferry\KnownFolders.cs" ^
