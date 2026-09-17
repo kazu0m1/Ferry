@@ -98,7 +98,7 @@ echo Building Ferry.exe...
  "Source\Ferry\RecycleBinService.Enumeration.cs" ^
  "Source\Ferry\SearchRequest.cs" ^
  "Source\Ferry\SearchService.cs" ^
- "Source\Ferry\SettingsWindow.cs" ^
+ "Source\Ferry\SettingsWindow.UI.cs" ^
  "Source\Ferry\SettingsWindow.Persistence.cs" ^
  "Source\Ferry\ShellContextMenu.cs" ^
  "Source\Ferry\ShellFileOperations.cs" ^
