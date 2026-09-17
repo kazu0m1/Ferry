@@ -6,13 +6,6 @@ using System.Windows.Media;
 
 namespace Ferry
 {
-    internal enum ChoiceDialogResult
-    {
-        Yes,
-        No,
-        Cancel
-    }
-
     internal static class ChoiceDialog
     {
         public static ChoiceDialogResult ShowYesNo(
