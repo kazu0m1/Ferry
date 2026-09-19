@@ -1,5 +1,22 @@
 ﻿# Ferry Changelog
 
+## [1.1.3] - 2026-09-20
+
+### Fixed
+- Ferry起動後に接続したリムーバブルドライブがSidebarの **Drives** に反映されない問題を修正。
+- ドライブ接続・切断をWindowsの `WM_DEVICECHANGE` で受け、Sidebarのドライブ一覧を自動更新するようにした。
+- Ferryでリムーバブルドライブを開いているとWindowsの **Safely Remove Hardware** が「このボリュームは現在使用中です」で失敗する問題を修正。
+- 対象ドライブのsafe-eject queryを受けたら、Ferryの通知ハンドル / `FileSystemWatcher` / 関連バックグラウンド処理を解放し、そのドライブを開いている全タブをHome等のローカルfallbackへ退避してからWindowsへ制御を返す。
+
+### Validated
+- Ferry起動後のリムーバブルドライブ接続でSidebarへ自動表示: PASS。
+- 取り外し後のSidebar更新、再接続・再表示・再Open: PASS。
+- リムーバブルドライブを1タブで開いた状態からのsafe eject: PASS。
+- 同じリムーバブルドライブを2タブで開いた状態からのsafe eject: PASS。両タブがHomeへ退避し、Windows側の取り外しも成功。
+
+### Preserved
+- v1.1.2 external D&D Move completion、v1.1.1 Paste result feedback、v1.1.0 Selection Engine / rubber-band / Selection Anchor / autoscrollには変更なし。
+
 ## [1.1.2] - 2026-09-16
 
 ### Fixed
