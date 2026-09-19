@@ -97,20 +97,24 @@ Observed:
 - therefore Ferry did not move the open tab to Home and reconnection flow could not be completed.
 
 ### Safe eject Prototype 2
-Status: **PENDING**.
+Single-tab user result: **PASS**.
 
-Required:
-1. Pull/build the latest `fix/removable-drive-refresh`.
-2. Start Ferry and connect the removable drive.
-3. Open the removable drive in Ferry.
-4. Use Windows **Safely Remove Hardware** without navigating away manually.
-5. Confirm Ferry moves the affected tab to Home (or another local fallback).
-6. Confirm Windows allows the drive to be ejected without reporting Ferry as the process using the volume.
-7. Reconnect and confirm the drive appears again and opens normally.
-8. If the single-tab test passes, repeat once with two Ferry tabs open on the removable drive and confirm both leave the drive before eject.
+Validated:
+- Ferry had the removable drive open in one tab;
+- Windows **Safely Remove Hardware** was invoked without navigating away manually;
+- Ferry automatically moved the affected tab to Home/a local fallback;
+- Windows allowed the drive to be ejected without the previous "volume is currently in use" failure.
+
+Remaining:
+1. Reconnect the removable drive and confirm it reappears under **Drives** and opens normally.
+2. Open the removable drive in two Ferry tabs.
+3. Invoke **Safely Remove Hardware**.
+4. Confirm both affected tabs leave the removable drive.
+5. Confirm Windows eject succeeds.
 
 ## Status
 Static validation: PASS.
 Drive arrival/removal Windows validation: PASS.
 Safe-eject Prototype 1: FAIL / superseded.
-Safe-eject Prototype 2: PENDING.
+Safe-eject Prototype 2 single-tab: PASS.
+Reconnect / two-tab safe-eject: PENDING.
