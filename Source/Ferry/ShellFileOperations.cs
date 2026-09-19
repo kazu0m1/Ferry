@@ -55,6 +55,16 @@ namespace Ferry
             return ExecuteTransfer(FO_MOVE, paths, destination, FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR);
         }
 
+        public static void BeginCopy(IList<string> paths, string destination, Action<bool, Exception> completion)
+        {
+            BeginTransfer(FO_COPY, paths, destination, FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR, completion);
+        }
+
+        public static void BeginMove(IList<string> paths, string destination, Action<bool, Exception> completion)
+        {
+            BeginTransfer(FO_MOVE, paths, destination, FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR, completion);
+        }
+
         public static bool DeleteToRecycleBin(IList<string> paths)
         {
             return Execute(FO_DELETE, paths, null, FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR);
@@ -77,66 +87,103 @@ namespace Ferry
         {
             if (paths == null || paths.Count == 0) return true;
 
+            Application app = Application.Current;
+            Dispatcher dispatcher = app == null ? null : app.Dispatcher;
+
+            if (dispatcher == null || !dispatcher.CheckAccess())
+            {
+                if (Interlocked.CompareExchange(ref transferActive, 1, 0) != 0)
+                    throw new IOException("Another file Copy/Move operation is already in progress.");
+
+                try
+                {
+                    return Execute(operation, new List<string>(paths), destination, flags);
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref transferActive, 0);
+                }
+            }
+
+            bool completed = false;
+            Exception failure = null;
+            DispatcherFrame frame = new DispatcherFrame();
+
+            BeginTransfer(
+                operation,
+                paths,
+                destination,
+                flags,
+                delegate(bool result, Exception error)
+                {
+                    completed = result;
+                    failure = error;
+                    frame.Continue = false;
+                });
+
+            // Paste and other synchronous callers keep their existing completion semantics, but
+            // the Dispatcher continues to process paint/input/minimize/restore while the Shell
+            // worker performs the potentially long transfer.
+            Dispatcher.PushFrame(frame);
+
+            if (failure != null) throw failure;
+            return completed;
+        }
+
+        private static void BeginTransfer(uint operation, IList<string> paths, string destination, ushort flags, Action<bool, Exception> completion)
+        {
+            if (paths == null || paths.Count == 0)
+            {
+                if (completion != null) completion(true, null);
+                return;
+            }
+
             if (Interlocked.CompareExchange(ref transferActive, 1, 0) != 0)
                 throw new IOException("Another file Copy/Move operation is already in progress.");
 
-            try
+            List<string> stablePaths = new List<string>(paths);
+            Application app = Application.Current;
+            Dispatcher dispatcher = app == null ? null : app.Dispatcher;
+
+            Thread worker = new Thread(delegate()
             {
-                List<string> stablePaths = new List<string>(paths);
-                Application app = Application.Current;
-                Dispatcher dispatcher = app == null ? null : app.Dispatcher;
-
-                // Preserve the existing synchronous Shell-operation contract for callers, including
-                // WPF drag/drop, while moving the expensive SHFileOperation call off the UI thread.
-                // A nested DispatcherFrame keeps window messages, painting, minimize/restore and
-                // normal browsing responsive until the Shell operation completes.
-                if (dispatcher == null || !dispatcher.CheckAccess())
-                    return Execute(operation, stablePaths, destination, flags);
-
                 bool completed = false;
                 Exception failure = null;
-                DispatcherFrame frame = new DispatcherFrame();
 
-                Thread worker = new Thread(delegate()
+                try
                 {
-                    try
+                    completed = Execute(operation, stablePaths, destination, flags);
+                }
+                catch (Exception ex)
+                {
+                    failure = ex;
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref transferActive, 0);
+
+                    if (completion != null)
                     {
-                        completed = Execute(operation, stablePaths, destination, flags);
-                    }
-                    catch (Exception ex)
-                    {
-                        failure = ex;
-                    }
-                    finally
-                    {
+                        Action notify = delegate { completion(completed, failure); };
                         try
                         {
-                            dispatcher.BeginInvoke(
-                                DispatcherPriority.Send,
-                                new Action(delegate { frame.Continue = false; }));
+                            if (dispatcher != null && !dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+                                dispatcher.BeginInvoke(DispatcherPriority.Normal, notify);
+                            else
+                                notify();
                         }
                         catch
                         {
-                            frame.Continue = false;
+                            try { notify(); } catch { }
                         }
                     }
-                });
+                }
+            });
 
-                worker.Name = operation == FO_MOVE ? "Ferry Shell Move" : "Ferry Shell Copy";
-                worker.IsBackground = true;
-                worker.SetApartmentState(ApartmentState.STA);
-                worker.Start();
-
-                Dispatcher.PushFrame(frame);
-                worker.Join();
-
-                if (failure != null) throw failure;
-                return completed;
-            }
-            finally
-            {
-                Interlocked.Exchange(ref transferActive, 0);
-            }
+            worker.Name = operation == FO_MOVE ? "Ferry Shell Move" : "Ferry Shell Copy";
+            worker.IsBackground = true;
+            worker.SetApartmentState(ApartmentState.STA);
+            worker.Start();
         }
 
         private static bool Execute(uint operation, IList<string> paths, string destination, ushort flags)
