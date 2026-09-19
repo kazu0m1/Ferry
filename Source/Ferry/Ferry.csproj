@@ -47,6 +47,7 @@
     <Compile Include="MainWindow.cs" />
     <Compile Include="MainWindow.Archive.cs" />
     <Compile Include="MainWindow.Converters.cs" />
+    <Compile Include="MainWindow.DriveNotifications.cs" />
     <Compile Include="MainWindow.PasteFeedback.cs" />
     <Compile Include="MainWindow.Sidebar.cs" />
     <Compile Include="MainWindow.TabViewContext.cs" />

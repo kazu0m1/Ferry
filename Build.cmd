@@ -82,6 +82,7 @@ echo Building Ferry.exe...
  "Source\Ferry\MainWindow.cs" ^
  "Source\Ferry\MainWindow.Archive.cs" ^
  "Source\Ferry\MainWindow.Converters.cs" ^
+ "Source\Ferry\MainWindow.DriveNotifications.cs" ^
  "Source\Ferry\MainWindow.PasteFeedback.cs" ^
  "Source\Ferry\MainWindow.Sidebar.cs" ^
  "Source\Ferry\MainWindow.TabViewContext.cs" ^
