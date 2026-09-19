@@ -58,7 +58,25 @@ A temporary Windows GitHub Actions workflow was used only on the bugfix branch:
 7. Optional but useful: start a Ferry-internal D&D Copy/Move that takes long enough to observe and confirm minimize/restore remains responsive.
 8. During an active transfer, click Ferry's Close button once and confirm Ferry refuses to close until the transfer is finished/cancelled.
 
+## Windows interactive runtime validation
+
+### Large cross-volume Move: minimize / restore
+User result: **PASS**.
+
+Validated:
+- a large C: -> D: Cut/Paste move was still in progress;
+- Ferry was minimized during the active transfer;
+- Ferry restored from the taskbar before the transfer finished;
+- the original v1.1.3 symptom (window not returning until transfer completion) did not reproduce.
+
+Remaining interactive checks:
+- tab switching / browsing responsiveness during the active transfer;
+- normal completion of the Move;
+- active-transfer close guard;
+- large Copy / long-running internal D&D if practical.
+
 ## Status
 Static/code review: PASS.
 Windows automated build: PASS.
-Windows interactive runtime validation: PENDING.
+Windows minimize/restore runtime validation: PASS.
+Remaining Windows interactive validation: PENDING.
