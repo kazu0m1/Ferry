@@ -105,16 +105,19 @@ Validated:
 - Ferry automatically moved the affected tab to Home/a local fallback;
 - Windows allowed the drive to be ejected without the previous "volume is currently in use" failure.
 
-Remaining:
-1. Reconnect the removable drive and confirm it reappears under **Drives** and opens normally.
-2. Open the removable drive in two Ferry tabs.
-3. Invoke **Safely Remove Hardware**.
-4. Confirm both affected tabs leave the removable drive.
-5. Confirm Windows eject succeeds.
+Additional user result: **PASS**.
+
+Validated:
+- reconnecting the removable drive made it reappear under **Drives**;
+- the drive opened normally again;
+- the removable drive was opened in two Ferry tabs;
+- **Safely Remove Hardware** moved both affected tabs to Home/a local fallback;
+- Windows then completed the eject successfully.
 
 ## Status
 Static validation: PASS.
 Drive arrival/removal Windows validation: PASS.
 Safe-eject Prototype 1: FAIL / superseded.
 Safe-eject Prototype 2 single-tab: PASS.
-Reconnect / two-tab safe-eject: PENDING.
+Reconnect / two-tab safe-eject: PASS.
+Final Windows validation: PASS.
