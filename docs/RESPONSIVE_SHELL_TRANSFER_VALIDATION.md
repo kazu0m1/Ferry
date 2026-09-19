@@ -98,8 +98,29 @@ Validated:
 - large cross-volume Copy via Ferry Paste remained responsive during minimize/restore and tab switching;
 - the Copy completed normally.
 
-Remaining interactive check:
-- long-running Ferry-internal D&D Copy/Move if practical.
+### Ferry -> Ferry long-running D&D: first candidate
+
+User result: **PARTIAL / FAIL on sender responsiveness**.
+
+Observed with two Ferry windows during a long-running Ferry -> Ferry transfer:
+- receiving Ferry window: minimize / restore PASS;
+- sending Ferry window: minimize / restore FAIL until the target Drop operation returns.
+
+A screen recording of the sending side was reviewed and is consistent with the reported sender-side blocking.
+
+Root cause:
+- the receiving Ferry no longer blocks its own Dispatcher while SHFileOperation runs;
+- however, the sending Ferry still remains inside synchronous WPF `DragDrop.DoDragDrop(...)`;
+- `DoDragDrop` does not return until the receiving Ferry's Drop handler returns;
+- therefore keeping the receiving `ViewDrop` handler synchronously open for the entire transfer still blocks the sending Ferry's D&D call.
+
+Required follow-up:
+- Ferry's target-side `ViewDrop` must accept the drop and return promptly;
+- the actual Shell Copy/Move must then continue on the existing STA transfer worker;
+- Paste behavior and Shell transfer semantics must remain unchanged.
+
+Remaining interactive validation:
+- re-test long-running Ferry -> Ferry D&D after the target-side asynchronous handoff fix.
 
 ## Status
 Static/code review: PASS.
@@ -109,4 +130,6 @@ Windows tab/navigation responsiveness validation: PASS.
 Windows cross-volume Move completion validation (C: <-> D:): PASS.
 Windows active-transfer close guard validation: PASS.
 Windows large Copy responsiveness/completion validation: PASS.
-Remaining Windows interactive validation: PENDING (internal D&D only).
+Ferry -> Ferry D&D receiver responsiveness: PASS.
+Ferry -> Ferry D&D sender responsiveness: FAIL on first candidate; follow-up fix required.
+Remaining Windows interactive validation: PENDING.
