@@ -77,8 +77,15 @@ Validated while the same large cross-volume Move was still active:
 - navigating to other folders and back worked;
 - Ferry remained interactively usable during the Shell transfer.
 
+Additional user result: **PASS**.
+
+Validated:
+- large C: -> D: Move completed normally;
+- source item was removed from C: and present on D:;
+- large D: -> C: Move also completed normally;
+- cross-volume Move semantics remained correct in both directions.
+
 Remaining interactive checks:
-- normal completion of the Move;
 - active-transfer close guard;
 - large Copy / long-running internal D&D if practical.
 
@@ -87,4 +94,5 @@ Static/code review: PASS.
 Windows automated build: PASS.
 Windows minimize/restore runtime validation: PASS.
 Windows tab/navigation responsiveness validation: PASS.
+Windows cross-volume Move completion validation (C: <-> D:): PASS.
 Remaining Windows interactive validation: PENDING.
