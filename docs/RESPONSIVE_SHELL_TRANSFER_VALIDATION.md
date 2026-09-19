@@ -124,7 +124,7 @@ Remaining interactive validation:
 
 ## Status
 Static/code review: PASS.
-Windows automated build: PASS.
+Windows automated build: PASS (initial STA-worker candidate and sender-side D&D handoff follow-up both compiled successfully).
 Windows minimize/restore runtime validation: PASS.
 Windows tab/navigation responsiveness validation: PASS.
 Windows cross-volume Move completion validation (C: <-> D:): PASS.
