@@ -69,8 +69,15 @@ Validated:
 - Ferry restored from the taskbar before the transfer finished;
 - the original v1.1.3 symptom (window not returning until transfer completion) did not reproduce.
 
+Additional user result: **PASS**.
+
+Validated while the same large cross-volume Move was still active:
+- opening another Ferry tab worked;
+- switching between tabs worked;
+- navigating to other folders and back worked;
+- Ferry remained interactively usable during the Shell transfer.
+
 Remaining interactive checks:
-- tab switching / browsing responsiveness during the active transfer;
 - normal completion of the Move;
 - active-transfer close guard;
 - large Copy / long-running internal D&D if practical.
@@ -79,4 +86,5 @@ Remaining interactive checks:
 Static/code review: PASS.
 Windows automated build: PASS.
 Windows minimize/restore runtime validation: PASS.
+Windows tab/navigation responsiveness validation: PASS.
 Remaining Windows interactive validation: PENDING.
