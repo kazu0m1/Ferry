@@ -85,9 +85,16 @@ Validated:
 - large D: -> C: Move also completed normally;
 - cross-volume Move semantics remained correct in both directions.
 
+Additional user result: **PASS**.
+
+Validated:
+- clicking Ferry's Close button during an active Copy/Move shows the transfer-in-progress warning;
+- Ferry remains open and the active transfer is not interrupted;
+- after the transfer finishes, Ferry remains open. This is intentional: the close request was cancelled at the time it was made, so Ferry does not auto-close later without a new explicit user close action.
+
 Remaining interactive checks:
-- active-transfer close guard;
-- large Copy / long-running internal D&D if practical.
+- large Copy responsiveness/completion;
+- long-running internal D&D if practical.
 
 ## Status
 Static/code review: PASS.
@@ -95,4 +102,5 @@ Windows automated build: PASS.
 Windows minimize/restore runtime validation: PASS.
 Windows tab/navigation responsiveness validation: PASS.
 Windows cross-volume Move completion validation (C: <-> D:): PASS.
+Windows active-transfer close guard validation: PASS.
 Remaining Windows interactive validation: PENDING.
