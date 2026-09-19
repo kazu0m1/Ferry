@@ -92,9 +92,14 @@ Validated:
 - Ferry remains open and the active transfer is not interrupted;
 - after the transfer finishes, Ferry remains open. This is intentional: the close request was cancelled at the time it was made, so Ferry does not auto-close later without a new explicit user close action.
 
-Remaining interactive checks:
-- large Copy responsiveness/completion;
-- long-running internal D&D if practical.
+Additional user result: **PASS**.
+
+Validated:
+- large cross-volume Copy via Ferry Paste remained responsive during minimize/restore and tab switching;
+- the Copy completed normally.
+
+Remaining interactive check:
+- long-running Ferry-internal D&D Copy/Move if practical.
 
 ## Status
 Static/code review: PASS.
@@ -103,4 +108,5 @@ Windows minimize/restore runtime validation: PASS.
 Windows tab/navigation responsiveness validation: PASS.
 Windows cross-volume Move completion validation (C: <-> D:): PASS.
 Windows active-transfer close guard validation: PASS.
-Remaining Windows interactive validation: PENDING.
+Windows large Copy responsiveness/completion validation: PASS.
+Remaining Windows interactive validation: PENDING (internal D&D only).
