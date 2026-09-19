@@ -3777,6 +3777,18 @@ namespace Ferry
 
         private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (ShellFileOperations.IsTransferActive)
+            {
+                MessageBox.Show(
+                    this,
+                    "A file Copy/Move operation is still running. Finish or cancel the Windows file operation before closing Ferry.",
+                    "Ferry",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                e.Cancel = true;
+                return;
+            }
+
             if (archiveOperationActive)
             {
                 ChoiceDialogResult answer = ChoiceDialog.ShowYesNo(
