@@ -1,6 +1,6 @@
 ﻿# Ferry Specification v1.1
 
-**Release baseline:** Ferry v1.1.2  
+**Release baseline:** Ferry v1.1.3  
 **Platform:** Windows 11 / .NET Framework 4.8 / WPF  
 **Status:** Final release baseline
 
@@ -72,8 +72,17 @@ This document defines the v1.1 additions and behavioral changes relative to the 
 - Ferry→Ferry internal D&D and Explorer→Ferry target behavior remain governed by the existing implementation and are not replaced by this external-source completion path.
 - Windows remains authoritative for destination-side D&D semantics and conflict handling.
 
-## 9. Release relationship
+## 9. Removable-drive lifecycle
+
+- The Sidebar **Drives** section updates when Windows reports drive arrival/removal after Ferry has already started; Ferry does not require a restart to see a newly connected removable drive.
+- Ferry uses Windows device notifications rather than a polling loop.
+- For registered drive-handle `DBT_DEVICEQUERYREMOVE` notifications, Ferry releases its drive notification handle and any active `FileSystemWatcher` / related tab background work on the affected drive before Windows completes the eject decision.
+- Every Ferry tab whose current path is on the affected drive leaves that drive and navigates to a non-affected Home/UserProfile/system-drive fallback without adding the disappearing path to navigation history.
+- Ferry does not veto the removal request; Windows remains authoritative for whether safe removal succeeds.
+- Reconnection re-registers the drive and restores it to the Sidebar drive list.
+
+## 10. Release relationship
 
 - `Ferry_SPEC_v1.0.md` remains the historical v1.0/v1.0.2 baseline and is not rewritten.
-- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.2 behavior.
+- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.3 behavior.
 - Historical Prototype and RC records are retained as development evidence and are not normative for later releases.
