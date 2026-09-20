@@ -1,5 +1,21 @@
 ﻿# Ferry Changelog
 
+## [1.1.6] - 2026-09-20
+
+### Added
+- Windowsの `This PC` Shell namespaceから、ドライブ文字を持たないMTP / Portable Deviceを認識するようにした。
+- 接続中のAndroidスマートフォン等をSidebarの **Portable Devices** セクションへ表示するようにした。
+- Portable Deviceをクリックすると、その端末をWindows Explorerで開く簡易連携を追加した。
+
+### Scope
+- Ferry内部でMTPストレージの列挙・コピー・削除等は実装しない。Portable Deviceのファイル操作はWindows Explorerへ委譲する。
+- 接続・切断の更新には既存の `WM_DEVICECHANGE / DBT_DEVNODES_CHANGED` によるSidebar再構築を再利用する。
+
+### Validated
+- Windows GitHub Actions `Build.cmd`: PASS。
+- Pixel 7aをUSB接続しファイル転送モードへ切り替えた際、Ferry Sidebarで端末認識: PASS。
+- Sidebarの端末項目クリックからWindows ExplorerでPixel 7aを開く動作: PASS。
+
 ## [1.1.5] - 2026-09-20
 
 ### Added
