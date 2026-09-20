@@ -1,0 +1,19 @@
+name: Validate Ferry v1.1.5 candidate
+
+on:
+  push:
+    branches:
+      - feature/v1.1.5-tab-sidebar
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+      - name: Build Ferry
+        shell: cmd
+        run: Build.cmd
