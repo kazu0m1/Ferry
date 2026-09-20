@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.1.3  
+> **Current release:** v1.1.4  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.1.3 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.3-win-portable.zip)**
+**[Download Ferry v1.1.4 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.4-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -49,6 +49,7 @@ Ferry is deliberately small in scope. It does not try to become an all-in-one du
 - **Capable bulk rename** — find/replace and numbering templates with live preview
 - **Tabs** — lightweight tabbed browsing without session-management bloat
 - **Windows integration** — Recycle Bin, Shell context menu, Properties, shortcuts, thumbnails, drag & drop
+- **Responsive long transfers** — large Windows Shell Copy/Move operations keep Ferry responsive; Ferry-to-Ferry D&D releases both windows while the target transfer continues
 - **Removable-drive lifecycle** — drives connected after Ferry starts appear automatically, and safe eject releases affected tabs/watchers before removal
 - **Explorer-compatible drag & drop** — confirmed Move drops from Ferry to Windows Explorer complete as moves rather than leaving the source behind
 - **Paste result feedback** — after Copy/Cut → Paste, the destination items from the current operation remain selected so you can immediately see what was pasted
@@ -71,7 +72,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.1.3-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.1.4-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -183,6 +184,8 @@ Windows remains the authority for Recycle Bin storage and operations.
 ### File operations and drag & drop
 
 Ferry delegates Windows-owned behavior where practical:
+
+Long Copy/Move operations are executed on a dedicated STA worker while Ferry's WPF Dispatcher remains responsive. Ferry-to-Ferry drops return promptly so both the sending and receiving Ferry windows remain usable during the transfer.
 
 - Copy / Cut / Paste
 - delete to Recycle Bin / permanent delete

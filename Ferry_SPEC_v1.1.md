@@ -1,6 +1,6 @@
 ﻿# Ferry Specification v1.1
 
-**Release baseline:** Ferry v1.1.3  
+**Release baseline:** Ferry v1.1.4  
 **Platform:** Windows 11 / .NET Framework 4.8 / WPF  
 **Status:** Final release baseline
 
@@ -81,8 +81,19 @@ This document defines the v1.1 additions and behavioral changes relative to the 
 - Ferry does not veto the removal request; Windows remains authoritative for whether safe removal succeeds.
 - Reconnection re-registers the drive and restores it to the Sidebar drive list.
 
-## 10. Release relationship
+## 10. Responsive Shell Copy/Move operations
+
+- Windows `SHFileOperation` remains authoritative for Ferry Copy/Move execution, progress UI, conflict handling, and cancellation.
+- Potentially long Copy/Move operations execute on a dedicated STA worker rather than blocking Ferry's WPF UI thread.
+- Synchronous callers such as Paste retain their operation-completion contract while Ferry continues to process Dispatcher work, including repainting, minimize/restore, tab interaction, and folder navigation.
+- Ferry allows at most one Ferry-owned Shell Copy/Move transfer at a time.
+- Ferry refuses to close while a Ferry-owned Copy/Move transfer is active.
+- Ferry→Ferry target-side D&D acknowledges the Drop promptly and lets the target-side STA worker continue the Shell transfer asynchronously, releasing the source Ferry from `DragDrop.DoDragDrop(...)`.
+- Same-drive Ferry→Ferry D&D continues to preserve Move semantics; cross-drive or Ctrl-modified D&D follows the existing Copy rules.
+- Delete operations are not moved to the transfer worker by this v1.1.4 change.
+
+## 11. Release relationship
 
 - `Ferry_SPEC_v1.0.md` remains the historical v1.0/v1.0.2 baseline and is not rewritten.
-- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.3 behavior.
+- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.4 behavior.
 - Historical Prototype and RC records are retained as development evidence and are not normative for later releases.

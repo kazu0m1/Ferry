@@ -1,8 +1,14 @@
-﻿Ferry v1.1.3 Portable
+﻿Ferry v1.1.4 Portable
 
 Ferry is a lightweight Windows 11 file manager inspired by the simplicity and workflow of GNOME Files (Nautilus).
 
-Highlights in v1.1.3:
+Highlights in v1.1.4:
+- Long Windows Shell Copy/Move operations no longer block Ferry's window or normal browsing UI
+- Ferry remains usable during large cross-volume Copy/Move operations, including minimize/restore, tab switching, and folder navigation
+- Ferry-to-Ferry drag-and-drop releases both the sender and receiver UI while the target-side Shell transfer continues
+- Ferry refuses to close while a Ferry-owned Copy/Move transfer is still active, preventing the worker operation from being abandoned
+
+Also includes v1.1.3:
 - Removable drives connected after Ferry starts now appear automatically under Drives
 - Safely Remove Hardware releases Ferry's drive handles/watchers and moves affected tabs to Home before eject
 - Multiple Ferry tabs on the removable drive are released together before eject

@@ -1,5 +1,29 @@
 ﻿# Ferry Changelog
 
+## [1.1.4] - 2026-09-20
+
+### Fixed
+- 長時間のWindows Shell Copy/Move中にFerryのWPF UI threadが塞がり、最小化したwindowを転送完了まで復元できない問題を修正。
+- Copy/Moveの `SHFileOperation` を専用STA workerで実行し、転送中もFerryのDispatcherがwindow描画・最小化/復元・tab操作・folder navigationを処理できるようにした。
+- Ferry→Ferryの長時間D&Dで、受信側Drop handlerがtransfer完了まで戻らず送信側が `DragDrop.DoDragDrop(...)` に拘束される問題を修正。受信側はDropを速やかに受理し、実transferはtarget側STA workerで継続する。
+- Ferry-owned Copy/Move実行中にFerryを閉じないようclose guardを追加し、worker transferがapplication終了で失われないようにした。
+
+### Validated
+- 大容量C:→D: / D:→C: Cut→Paste Moveの正常完了: PASS。
+- 大容量Move中の最小化/復元、tab追加/切替、folder navigation: PASS。
+- 大容量Copy中の最小化/復元、tab切替、正常完了: PASS。
+- active transfer中のclose guard: PASS。
+- Ferry→Ferry D&D中、送信側・受信側とも最小化/復元: PASS。
+- Ferry→Ferry D&D中、送信側で複数tab open / folder navigation: PASS。
+- 同一drive内Ferry→Ferry D&D Moveでsource消失・destinationに1件のみ存在: PASS。
+- Windows GitHub Actions `Build.cmd`: PASS。
+
+### Preserved
+- Windows ShellはCopy/Moveの実処理・progress/conflict/cancel UIのauthorityのまま。独自copy engineは導入しない。
+- Paste側は既存のoperation-completion contractとv1.1.1 Paste-result feedbackを維持。
+- Delete処理は今回のbugfixでは変更しない。
+- v1.1.3 removable-drive lifecycle、v1.1.2 external D&D Move completion、v1.1.0 selection/rubber-band behaviorを維持。
+
 ## [1.1.3] - 2026-09-20
 
 ### Fixed
