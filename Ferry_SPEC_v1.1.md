@@ -1,6 +1,6 @@
 ﻿# Ferry Specification v1.1
 
-**Release baseline:** Ferry v1.1.4  
+**Release baseline:** Ferry v1.1.5  
 **Platform:** Windows 11 / .NET Framework 4.8 / WPF  
 **Status:** Final release baseline
 
@@ -92,8 +92,18 @@ This document defines the v1.1 additions and behavioral changes relative to the 
 - Same-drive Ferry→Ferry D&D continues to preserve Move semantics; cross-drive or Ctrl-modified D&D follows the existing Copy rules.
 - Delete operations are not moved to the transfer worker by this v1.1.4 change.
 
-## 11. Release relationship
+## 11. Tab reordering and Sidebar folder context menus
+
+- Open tabs can be reordered within the current Ferry window by dragging a tab header left or right.
+- The tab close button remains a close-only hit target and does not arm tab dragging.
+- Tab reordering uses a Ferry-private `Ferry.TabItem` data format and does not replace or intercept file drag-and-drop formats.
+- Sidebar folder entries for Places/known folders and Drives expose a Ferry context menu whose first command is **Open** in the current tab.
+- Sidebar folder menus also expose Open in New Tab, Open in New Ferry Window, Open Terminal Here, Open in Explorer, Properties, and Show more options.
+- Pinned folders use the same folder context menu and additionally retain **Unpin**.
+- Windows remains authoritative for the detailed Shell menu opened through Show more options.
+
+## 12. Release relationship
 
 - `Ferry_SPEC_v1.0.md` remains the historical v1.0/v1.0.2 baseline and is not rewritten.
-- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.4 behavior.
+- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.5 behavior.
 - Historical Prototype and RC records are retained as development evidence and are not normative for later releases.
