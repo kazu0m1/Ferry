@@ -1,0 +1,27 @@
+name: Validate Ferry v1.1.6 portable devices
+
+on:
+  push:
+    branches:
+      - feature/v1.1.6-portable-devices
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+
+      - name: Build
+        shell: cmd
+        run: Build.cmd
+
+      - name: Upload portable candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ferry-v1.1.6-portable-device-candidate
+          path: Portable/
+          if-no-files-found: error
