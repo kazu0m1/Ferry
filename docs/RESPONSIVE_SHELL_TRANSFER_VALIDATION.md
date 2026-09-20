@@ -131,8 +131,18 @@ Validated after the target-side asynchronous handoff fix:
 
 This confirms that returning promptly from the target Drop handler releases the source Ferry from `DragDrop.DoDragDrop(...)` while the receiving Ferry's STA worker continues the Shell transfer.
 
-Remaining interactive validation:
-- same-drive Ferry -> Ferry D&D Move semantics (target returns Move before the asynchronous Shell move completes).
+### Same-drive Ferry -> Ferry D&D Move
+
+User result: **PASS**.
+
+Validated:
+- two Ferry windows opened different folders on the same drive;
+- D&D Move completed normally;
+- the source item disappeared from the original folder;
+- exactly one moved item existed at the destination;
+- no duplicate-delete or copy-only regression was observed.
+
+All planned Windows interactive validation for this bugfix is complete.
 
 ## Status
 Static/code review: PASS.
@@ -144,4 +154,5 @@ Windows active-transfer close guard validation: PASS.
 Windows large Copy responsiveness/completion validation: PASS.
 Ferry -> Ferry D&D receiver responsiveness: PASS.
 Ferry -> Ferry D&D sender responsiveness: PASS after target-side asynchronous handoff fix.
-Remaining Windows interactive validation: PENDING (same-drive D&D Move semantics only).
+Same-drive Ferry -> Ferry D&D Move semantics: PASS.
+Windows interactive validation: COMPLETE / PASS.
