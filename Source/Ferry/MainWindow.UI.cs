@@ -9,6 +9,10 @@ namespace Ferry
 {
     internal sealed partial class MainWindow : Window
     {
+        private Point tabDragStart;
+        private TabItem tabDragSourceItem;
+        private const string TabDragFormat = "Ferry.TabItem";
+
         private UIElement BuildUi()
         {
             Grid root = new Grid();
@@ -122,8 +126,12 @@ namespace Ferry
             mainGrid.Children.Add(sidebarSplitter); Grid.SetColumn(sidebarSplitter, 0);
             BuildSidebar();
 
-            tabs = new TabControl { Padding = new Thickness(0), Margin = new Thickness(0) };
+            tabs = new TabControl { Padding = new Thickness(0), Margin = new Thickness(0), AllowDrop = true };
             tabs.SelectionChanged += TabsSelectionChanged;
+            tabs.PreviewMouseLeftButtonDown += TabsPreviewMouseLeftButtonDown;
+            tabs.PreviewMouseMove += TabsPreviewMouseMove;
+            tabs.DragOver += TabsDragOver;
+            tabs.Drop += TabsDrop;
             mainGrid.Children.Add(tabs); Grid.SetColumn(tabs, 1);
             root.Children.Add(mainGrid); Grid.SetRow(mainGrid, 1);
 
@@ -161,6 +169,104 @@ namespace Ferry
             statusGrid.Children.Add(archiveCancelButton); Grid.SetColumn(archiveCancelButton, 2);
             status.Child = statusGrid; root.Children.Add(status); Grid.SetRow(status, 2);
             return root;
+        }
+
+        private TabItem FindTabItemFromSource(DependencyObject source, bool allowButtonSource)
+        {
+            bool buttonHit = false;
+            DependencyObject current = source;
+            while (current != null && current != tabs)
+            {
+                if (current is Button) buttonHit = true;
+                TabItem tab = current as TabItem;
+                if (tab != null) return allowButtonSource || !buttonHit ? tab : null;
+                try { current = VisualTreeHelper.GetParent(current); }
+                catch { return null; }
+            }
+            return null;
+        }
+
+        private void TabsPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left || tabs == null) return;
+            tabDragSourceItem = FindTabItemFromSource(e.OriginalSource as DependencyObject, false);
+            tabDragStart = e.GetPosition(tabs);
+        }
+
+        private void TabsPreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (tabs == null || tabDragSourceItem == null) return;
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                tabDragSourceItem = null;
+                return;
+            }
+            if (tabs.Items.Count < 2 || tabs.Items.IndexOf(tabDragSourceItem) < 0) return;
+
+            Point current = e.GetPosition(tabs);
+            if (Math.Abs(current.X - tabDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                Math.Abs(current.Y - tabDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+            TabItem source = tabDragSourceItem;
+            DataObject data = new DataObject();
+            data.SetData(TabDragFormat, source);
+            try { DragDrop.DoDragDrop(source, data, DragDropEffects.Move); }
+            finally { tabDragSourceItem = null; }
+        }
+
+        private void TabsDragOver(object sender, DragEventArgs e)
+        {
+            if (tabs == null || !e.Data.GetDataPresent(TabDragFormat))
+            {
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
+            }
+
+            TabItem source = e.Data.GetData(TabDragFormat) as TabItem;
+            TabItem target = FindTabItemFromSource(e.OriginalSource as DependencyObject, true);
+            e.Effects = source != null && target != null && tabs.Items.IndexOf(source) >= 0
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void TabsDrop(object sender, DragEventArgs e)
+        {
+            if (tabs == null || !e.Data.GetDataPresent(TabDragFormat)) return;
+
+            TabItem source = e.Data.GetData(TabDragFormat) as TabItem;
+            TabItem target = FindTabItemFromSource(e.OriginalSource as DependencyObject, true);
+            if (source == null || target == null)
+            {
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
+            }
+
+            int sourceIndex = tabs.Items.IndexOf(source);
+            int targetIndex = tabs.Items.IndexOf(target);
+            if (sourceIndex < 0 || targetIndex < 0)
+            {
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
+            }
+
+            Point targetPoint = e.GetPosition(target);
+            if (targetPoint.X >= Math.Max(1.0, target.ActualWidth) / 2.0) targetIndex++;
+            if (sourceIndex < targetIndex) targetIndex--;
+
+            if (targetIndex != sourceIndex)
+            {
+                tabs.Items.Remove(source);
+                targetIndex = Math.Max(0, Math.Min(targetIndex, tabs.Items.Count));
+                tabs.Items.Insert(targetIndex, source);
+            }
+
+            tabs.SelectedItem = source;
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
         }
 
         private Button ToolbarButton(string content, string tooltip)
