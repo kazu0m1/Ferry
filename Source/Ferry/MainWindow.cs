@@ -2032,12 +2032,38 @@ namespace Ferry
                 string destination = ResolveDropDestination(view, state, e.GetPosition(view));
                 List<string> actionable = GetActionableDropPaths(files, destination);
                 if (actionable.Count == 0) { e.Effects = DragDropEffects.None; return; }
+
                 bool copy = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control || !SameDrive(actionable[0], destination);
+                DragDropEffects acceptedEffect = copy ? DragDropEffects.Copy : DragDropEffects.Move;
                 InvalidateRenameUndo();
-                if (copy) ShellFileOperations.Copy(actionable, destination); else ShellFileOperations.Move(actionable, destination);
-                ScheduleFolderRefresh(state);
+
+                // A Ferry target must return from Drop promptly.  Keeping this handler open until
+                // SHFileOperation finishes also keeps the source Ferry inside DoDragDrop, which
+                // makes the source window unable to restore while a large transfer is running.
+                // The target owns the actual Shell transfer, so acknowledge the drop now and let
+                // the existing STA worker finish the Copy/Move independently.
+                Action<bool, Exception> completion = delegate(bool completed, Exception error)
+                {
+                    if (error != null)
+                    {
+                        Logger.Write("Drop transfer failed: " + error);
+                        MessageBox.Show(this, error.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+
+                    if (state != null && contexts.ContainsKey(state.Id))
+                        ScheduleFolderRefresh(state);
+                };
+
+                if (copy) ShellFileOperations.BeginCopy(actionable, destination, completion);
+                else ShellFileOperations.BeginMove(actionable, destination, completion);
+
+                e.Effects = acceptedEffect;
             }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex)
+            {
+                e.Effects = DragDropEffects.None;
+                MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             finally
             {
                 if (ctx != null) ClearDropTargetHighlight(ctx);
@@ -3777,6 +3803,18 @@ namespace Ferry
 
         private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (ShellFileOperations.IsTransferActive)
+            {
+                MessageBox.Show(
+                    this,
+                    "A file Copy/Move operation is still running. Finish or cancel the Windows file operation before closing Ferry.",
+                    "Ferry",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                e.Cancel = true;
+                return;
+            }
+
             if (archiveOperationActive)
             {
                 ChoiceDialogResult answer = ChoiceDialog.ShowYesNo(
