@@ -1,6 +1,6 @@
 ﻿# Ferry Specification v1.1
 
-**Release baseline:** Ferry v1.1.5  
+**Release baseline:** Ferry v1.1.6  
 **Platform:** Windows 11 / .NET Framework 4.8 / WPF  
 **Status:** Final release baseline
 
@@ -102,8 +102,17 @@ This document defines the v1.1 additions and behavioral changes relative to the 
 - Pinned folders use the same folder context menu and additionally retain **Unpin**.
 - Windows remains authoritative for the detailed Shell menu opened through Show more options.
 
-## 12. Release relationship
+## 12. Portable-device recognition
+
+- Ferry enumerates non-filesystem folder entries exposed by the Windows **This PC** Shell namespace and may surface connected MTP / Portable Devices in the Sidebar.
+- Portable devices appear under a dedicated **Portable Devices** heading and remain distinct from drive-letter-backed entries in **Drives**.
+- Selecting a Portable Device does not navigate Ferry into an MTP object tree. Ferry delegates opening the device to Windows Explorer.
+- Ferry does not implement native MTP enumeration, copy, move, rename, delete, or folder creation in v1.1.6.
+- Existing Windows device-change notifications trigger Sidebar rebuilding so attach/detach state can be reflected without introducing a separate polling loop.
+- Failure to query the Shell namespace must not prevent normal Ferry file-system browsing.
+
+## 13. Release relationship
 
 - `Ferry_SPEC_v1.0.md` remains the historical v1.0/v1.0.2 baseline and is not rewritten.
-- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.5 behavior.
+- This v1.1 specification plus `docs/RUBBER_BAND_SELECTION_SPEC_JA.md` defines the current v1.1.6 behavior.
 - Historical Prototype and RC records are retained as development evidence and are not normative for later releases.
