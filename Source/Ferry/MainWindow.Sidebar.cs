@@ -121,6 +121,15 @@ namespace Ferry
                 }
             }
             catch { }
+
+            List<ShellInterop.PortableDeviceInfo> portableDevices = ShellInterop.GetPortableDevices();
+            if (portableDevices.Count > 0)
+            {
+                AddSidebarHeading("Portable Devices");
+                for (int i = 0; i < portableDevices.Count; i++)
+                    AddPortableDeviceButton(portableDevices[i]);
+            }
+
             AddSidebarHeading("System");
             Button recycle = SidebarButton("Recycle Bin");
             recycle.Click += delegate { Navigate(TabState.RecycleBinPath, true); };
@@ -151,6 +160,28 @@ namespace Ferry
         {
             Button button = SidebarButton(text); button.Tag = path; button.ToolTip = path; button.Click += delegate { Navigate(path, true); };
             button.ContextMenu = CreateSidebarPathContextMenu(path, false);
+            sidebarPanel.Children.Add(button);
+        }
+
+        private void AddPortableDeviceButton(ShellInterop.PortableDeviceInfo device)
+        {
+            if (device == null || string.IsNullOrWhiteSpace(device.Name)) return;
+
+            Button button = SidebarButton(device.Name);
+            button.ToolTip = "Portable device — opens in Windows Explorer";
+            button.Click += delegate
+            {
+                if (!ShellInterop.OpenPortableDevice(device.Name, device.Identity))
+                    MessageBox.Show("Windows Explorer could not open this portable device.", "Ferry", MessageBoxButton.OK, MessageBoxImage.Information);
+            };
+
+            ContextMenu menu = new ContextMenu();
+            menu.Items.Add(Item("Open in Explorer", delegate
+            {
+                if (!ShellInterop.OpenPortableDevice(device.Name, device.Identity))
+                    MessageBox.Show("Windows Explorer could not open this portable device.", "Ferry", MessageBoxButton.OK, MessageBoxImage.Information);
+            }));
+            button.ContextMenu = menu;
             sidebarPanel.Children.Add(button);
         }
 
