@@ -1,0 +1,102 @@
+name: Release Ferry v1.1.5
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - RELEASE_NOTES_v1.1.5.md
+      - .github/workflows/release-v1.1.5.yml
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: startsWith(github.event.head_commit.message, 'Release Ferry v1.1.5')
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build portable release
+        shell: cmd
+        run: Make-PortableRelease.cmd
+
+      - name: Verify package and version
+        shell: pwsh
+        run: |
+          $zip = "dist\\Ferry-v1.1.5-win-portable.zip"
+          if (-not (Test-Path $zip)) { throw "Release ZIP not found: $zip" }
+
+          $exe = "Portable\\Ferry.exe"
+          if (-not (Test-Path $exe)) { throw "Ferry.exe not found after build." }
+
+          $info = [System.Diagnostics.FileVersionInfo]::GetVersionInfo((Resolve-Path $exe))
+          if ($info.FileVersion -ne "1.1.5.0") {
+            throw "Unexpected FileVersion: $($info.FileVersion)"
+          }
+
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          "RELEASE_SHA256=$hash" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "SHA-256: $hash"
+
+      - name: Create annotated release tag
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git rev-parse --verify --quiet "refs/tags/v1.1.5" | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+            throw "Tag v1.1.5 already exists."
+          }
+
+          git tag -a v1.1.5 $env:GITHUB_SHA -m "Ferry v1.1.5"
+          git push origin v1.1.5
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.1.5 `
+            "dist\\Ferry-v1.1.5-win-portable.zip" `
+            --repo "${{ github.repository }}" `
+            --title "Ferry v1.1.5" `
+            --notes-file "RELEASE_NOTES_v1.1.5.md" `
+            --verify-tag
+
+      - name: Verify published asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Path "release-verify" -Force | Out-Null
+          gh release download v1.1.5 `
+            --repo "${{ github.repository }}" `
+            --pattern "Ferry-v1.1.5-win-portable.zip" `
+            --dir "release-verify"
+
+          $downloaded = "release-verify\\Ferry-v1.1.5-win-portable.zip"
+          if (-not (Test-Path $downloaded)) { throw "Published asset could not be downloaded." }
+
+          $downloadedHash = (Get-FileHash -Algorithm SHA256 $downloaded).Hash.ToLowerInvariant()
+          if ($downloadedHash -ne $env:RELEASE_SHA256) {
+            throw "Published asset SHA-256 mismatch."
+          }
+
+          Expand-Archive -Path $downloaded -DestinationPath "release-verify\\expanded" -Force
+          $publishedExe = "release-verify\\expanded\\Ferry.exe"
+          if (-not (Test-Path $publishedExe)) { throw "Published ZIP does not contain Ferry.exe." }
+
+          $publishedInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo((Resolve-Path $publishedExe))
+          if ($publishedInfo.FileVersion -ne "1.1.5.0") {
+            throw "Published Ferry.exe has unexpected FileVersion: $($publishedInfo.FileVersion)"
+          }
+
+          Write-Host "Published asset verified."
+          Write-Host "SHA-256: $downloadedHash"
