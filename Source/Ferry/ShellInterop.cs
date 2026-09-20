@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Interop;
@@ -12,6 +14,18 @@ namespace Ferry
 {
     internal static class ShellInterop
     {
+        internal sealed class PortableDeviceInfo
+        {
+            public PortableDeviceInfo(string name, string identity)
+            {
+                Name = name;
+                Identity = identity;
+            }
+
+            public string Name { get; private set; }
+            public string Identity { get; private set; }
+        }
+
         private const uint SHGFI_ICON = 0x000000100;
         private const uint SHGFI_TYPENAME = 0x000000400;
         private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
@@ -249,6 +263,170 @@ namespace Ferry
                 else
                     Process.Start("explorer.exe", "\"" + path + "\"");
             }
+            catch { }
+        }
+
+        public static List<PortableDeviceInfo> GetPortableDevices()
+        {
+            List<PortableDeviceInfo> devices = new List<PortableDeviceInfo>();
+            object shellApplication = null;
+            object computerFolder = null;
+            object items = null;
+
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("Shell.Application");
+                if (shellType == null) return devices;
+
+                shellApplication = Activator.CreateInstance(shellType);
+                computerFolder = InvokeComMethod(shellApplication, "NameSpace", 17);
+                if (computerFolder == null) return devices;
+
+                items = InvokeComMethod(computerFolder, "Items");
+                if (items == null) return devices;
+
+                int count = Convert.ToInt32(GetComProperty(items, "Count"));
+                for (int i = 0; i < count; i++)
+                {
+                    object item = null;
+                    try
+                    {
+                        item = InvokeComMethod(items, "Item", i);
+                        if (item == null) continue;
+
+                        bool isFolder = Convert.ToBoolean(GetComProperty(item, "IsFolder"));
+                        bool isFileSystem = Convert.ToBoolean(GetComProperty(item, "IsFileSystem"));
+                        if (!isFolder || isFileSystem) continue;
+
+                        string name = Convert.ToString(GetComProperty(item, "Name"));
+                        if (string.IsNullOrWhiteSpace(name)) continue;
+
+                        string identity = string.Empty;
+                        try { identity = Convert.ToString(GetComProperty(item, "Path")) ?? string.Empty; }
+                        catch { }
+
+                        devices.Add(new PortableDeviceInfo(name, identity));
+                    }
+                    catch
+                    {
+                        // Shell namespace entries can disappear while USB/MTP state is changing.
+                    }
+                    finally
+                    {
+                        ReleaseComObject(item);
+                    }
+                }
+            }
+            catch
+            {
+                // Portable-device discovery is optional. Normal file-system browsing must
+                // continue even if the Windows Shell namespace cannot be queried.
+            }
+            finally
+            {
+                ReleaseComObject(items);
+                ReleaseComObject(computerFolder);
+                ReleaseComObject(shellApplication);
+            }
+
+            return devices;
+        }
+
+        public static bool OpenPortableDevice(string name, string identity)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return false;
+
+            object shellApplication = null;
+            object computerFolder = null;
+            object items = null;
+
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("Shell.Application");
+                if (shellType == null) return false;
+
+                shellApplication = Activator.CreateInstance(shellType);
+                computerFolder = InvokeComMethod(shellApplication, "NameSpace", 17);
+                if (computerFolder == null) return false;
+
+                items = InvokeComMethod(computerFolder, "Items");
+                if (items == null) return false;
+
+                int count = Convert.ToInt32(GetComProperty(items, "Count"));
+                for (int i = 0; i < count; i++)
+                {
+                    object item = null;
+                    try
+                    {
+                        item = InvokeComMethod(items, "Item", i);
+                        if (item == null) continue;
+
+                        bool isFolder = Convert.ToBoolean(GetComProperty(item, "IsFolder"));
+                        bool isFileSystem = Convert.ToBoolean(GetComProperty(item, "IsFileSystem"));
+                        if (!isFolder || isFileSystem) continue;
+
+                        string itemName = Convert.ToString(GetComProperty(item, "Name"));
+                        string itemIdentity = string.Empty;
+                        try { itemIdentity = Convert.ToString(GetComProperty(item, "Path")) ?? string.Empty; }
+                        catch { }
+
+                        bool identityMatch =
+                            !string.IsNullOrEmpty(identity) &&
+                            string.Equals(itemIdentity, identity, StringComparison.OrdinalIgnoreCase);
+                        bool nameMatch = string.Equals(itemName, name, StringComparison.OrdinalIgnoreCase);
+                        if (!identityMatch && !nameMatch) continue;
+
+                        InvokeComMethod(item, "InvokeVerb", "open");
+                        return true;
+                    }
+                    catch
+                    {
+                    }
+                    finally
+                    {
+                        ReleaseComObject(item);
+                    }
+                }
+            }
+            catch
+            {
+            }
+            finally
+            {
+                ReleaseComObject(items);
+                ReleaseComObject(computerFolder);
+                ReleaseComObject(shellApplication);
+            }
+
+            return false;
+        }
+
+        private static object GetComProperty(object target, string propertyName)
+        {
+            if (target == null) return null;
+            return target.GetType().InvokeMember(
+                propertyName,
+                BindingFlags.GetProperty,
+                null,
+                target,
+                null);
+        }
+
+        private static object InvokeComMethod(object target, string methodName, params object[] arguments)
+        {
+            if (target == null) return null;
+            return target.GetType().InvokeMember(
+                methodName,
+                BindingFlags.InvokeMethod,
+                null,
+                target,
+                arguments);
+        }
+
+        private static void ReleaseComObject(object value)
+        {
+            if (value == null || !Marshal.IsComObject(value)) return;
+            try { Marshal.FinalReleaseComObject(value); }
             catch { }
         }
 
