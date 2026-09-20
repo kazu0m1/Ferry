@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.1.5  
+> **現在のリリース:** v1.1.6  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -82,7 +82,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.1.5の初期設定
+## v1.1.6の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -106,6 +106,7 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 
 - Home / 標準ユーザーフォルダー / ピン留め / ドライブ / ごみ箱のSidebar。フォルダー項目は右クリックから**Open**、新規タブ/ウィンドウ、Explorer、Properties、Windows詳細メニューを利用可能
 - 起動後に接続したリムーバブルドライブを自動表示。安全な取り外し時は対象ドライブを開いている全タブをHome等へ退避してからWindowsへ制御を返す
+- MTP / Portable DeviceはSidebarの **Portable Devices** に表示し、クリックするとWindows Explorerで開く
 - PinnedはD&Dで並べ替え可能。順序は再起動後も保持
 - Sidebar幅は50～480で設定可能。境界をダブルクリックすると表示文字列幅へ自動フィット
 - Breadcrumb（`Ctrl+L`でLocation Box、`Esc`または再度`Ctrl+L`でBreadcrumbへ復帰）
