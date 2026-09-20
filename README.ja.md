@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.1.5  
+> **現在のリリース:** v1.1.6  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.1.5 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.5-win-portable.zip)**
+**[Ferry v1.1.6 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.6-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -51,6 +51,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 - **Windowsとの自然な統合** — ごみ箱、プロパティ、詳細Shellメニュー、ショートカット、D&D
 - **大容量転送中も応答性を維持** — Windows ShellのCopy/Move中もFerryを最小化・復元でき、タブ切替やフォルダー移動を継続可能。Ferry同士のD&Dでも送受信側の両方を操作可能
 - **リムーバブルドライブ対応** — Ferry起動後に接続したドライブを自動反映し、安全な取り外し時は対象タブと監視を解放してから取り外し
+- **Portable Device認識** — MTP/Android端末をSidebarに表示し、クリックするとWindows Explorerで開きます
 - **Explorer互換のD&D** — FerryからWindows Explorerへの通常Moveで、destinationへ移動したitemがsource側へ残らない
 - **Paste結果の可視化** — Copy/Cut → Paste後、今回貼り付けたdestination項目が選択状態で残り、何を貼り付けたかすぐ分かる
 - **ZIP圧縮・展開** — Ferry側で進捗・ETA・Cancel・競合処理・安全確認まで管理
@@ -66,7 +67,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.1.5-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.1.6-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -81,7 +82,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.1.5の初期設定
+## v1.1.6の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -105,6 +106,7 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 
 - Home / 標準ユーザーフォルダー / ピン留め / ドライブ / ごみ箱のSidebar。フォルダー項目は右クリックから**Open**、新規タブ/ウィンドウ、Explorer、Properties、Windows詳細メニューを利用可能
 - 起動後に接続したリムーバブルドライブを自動表示。安全な取り外し時は対象ドライブを開いている全タブをHome等へ退避してからWindowsへ制御を返す
+- MTP / Portable DeviceはSidebarの **Portable Devices** に表示し、クリックするとWindows Explorerで開く
 - PinnedはD&Dで並べ替え可能。順序は再起動後も保持
 - Sidebar幅は50～480で設定可能。境界をダブルクリックすると表示文字列幅へ自動フィット
 - Breadcrumb（`Ctrl+L`でLocation Box、`Esc`または再度`Ctrl+L`でBreadcrumbへ復帰）
@@ -273,7 +275,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.1.5-win-portable.zip
+dist\Ferry-v1.1.6-win-portable.zip
 ```
 
 です。

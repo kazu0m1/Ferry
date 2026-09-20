@@ -1,10 +1,16 @@
-﻿Ferry v1.1.5 Portable
+﻿Ferry v1.1.6 Portable
 
 Ferry is a lightweight Windows 11 file manager inspired by the simplicity and workflow of GNOME Files (Nautilus).
 
-Highlights in v1.1.5:
+Highlights in v1.1.6:
+- Connected MTP/portable devices such as Android phones are recognized in the Sidebar
+- Portable devices appear under a dedicated Portable Devices section
+- Clicking a portable device opens it in Windows Explorer for file transfer
+- Ferry does not attempt native MTP file operations; Windows Explorer remains authoritative
+
+Also includes v1.1.5:
 - Open tabs can be reordered by dragging them left or right
-- Sidebar folders now provide an Explorer-style right-click menu with Open, new-tab/window, Explorer, Properties, and Windows detailed options
+- Sidebar folders provide an Explorer-style right-click menu with Open, new-tab/window, Explorer, Properties, and Windows detailed options
 - Pinned folders keep Unpin in the expanded sidebar context menu
 - Tab reordering uses a Ferry-only drag format so normal file drag-and-drop remains independent
 
