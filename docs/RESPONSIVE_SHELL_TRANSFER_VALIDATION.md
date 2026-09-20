@@ -119,8 +119,20 @@ Required follow-up:
 - the actual Shell Copy/Move must then continue on the existing STA transfer worker;
 - Paste behavior and Shell transfer semantics must remain unchanged.
 
+### Ferry -> Ferry long-running D&D: follow-up candidate
+
+User result: **PASS for sender/receiver responsiveness**.
+
+Validated after the target-side asynchronous handoff fix:
+- receiving Ferry window: minimize / restore PASS;
+- sending Ferry window: minimize / restore PASS;
+- sending Ferry could open multiple tabs while the D&D Copy was still running;
+- sending Ferry could navigate between folders while the D&D Copy was still running.
+
+This confirms that returning promptly from the target Drop handler releases the source Ferry from `DragDrop.DoDragDrop(...)` while the receiving Ferry's STA worker continues the Shell transfer.
+
 Remaining interactive validation:
-- re-test long-running Ferry -> Ferry D&D after the target-side asynchronous handoff fix.
+- same-drive Ferry -> Ferry D&D Move semantics (target returns Move before the asynchronous Shell move completes).
 
 ## Status
 Static/code review: PASS.
@@ -131,5 +143,5 @@ Windows cross-volume Move completion validation (C: <-> D:): PASS.
 Windows active-transfer close guard validation: PASS.
 Windows large Copy responsiveness/completion validation: PASS.
 Ferry -> Ferry D&D receiver responsiveness: PASS.
-Ferry -> Ferry D&D sender responsiveness: FAIL on first candidate; follow-up fix required.
-Remaining Windows interactive validation: PENDING.
+Ferry -> Ferry D&D sender responsiveness: PASS after target-side asynchronous handoff fix.
+Remaining Windows interactive validation: PENDING (same-drive D&D Move semantics only).
