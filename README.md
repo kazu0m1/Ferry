@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.1.4  
+> **Current release:** v1.1.5  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.1.4 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.4-win-portable.zip)**
+**[Download Ferry v1.1.5 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.5-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -47,7 +47,7 @@ Ferry is deliberately small in scope. It does not try to become an all-in-one du
 - **Folder item counts** — visible directly in Grid and List views
 - **Fast recursive filename search** — progressive results, Windows Search when useful, direct traversal as fallback
 - **Capable bulk rename** — find/replace and numbering templates with live preview
-- **Tabs** — lightweight tabbed browsing without session-management bloat
+- **Tabs** — lightweight tabbed browsing with drag reordering
 - **Windows integration** — Recycle Bin, Shell context menu, Properties, shortcuts, thumbnails, drag & drop
 - **Responsive long transfers** — large Windows Shell Copy/Move operations keep Ferry responsive; Ferry-to-Ferry D&D releases both windows while the target transfer continues
 - **Removable-drive lifecycle** — drives connected after Ferry starts appear automatically, and safe eject releases affected tabs/watchers before removal
@@ -72,7 +72,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.1.4-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.1.5-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -110,13 +110,13 @@ A custom terminal command and arguments can be set in **Settings**.
 
 ### Navigation and views
 
-- Sidebar with Home, standard user folders, pinned folders, drives, and Recycle Bin
+- Sidebar with Home, standard user folders, pinned folders, drives, and Recycle Bin; folder entries provide Explorer-style right-click actions including **Open**
 - Removable drives connected after startup appear automatically; safe eject moves every affected Ferry tab to Home/a local fallback before Windows removes the drive
 - Pinned folders can be reordered by drag & drop; the order persists across restarts
 - Sidebar width is configurable from 50–480; double-click the divider to auto-fit visible labels
 - Breadcrumb navigation; `Ctrl+L` opens the Location Box, `Esc` or `Ctrl+L` again returns to Breadcrumb
 - Back / Forward / Up / Home
-- Tabs (`Ctrl+T`, `Ctrl+W`, `Ctrl+Tab`, `Ctrl+Shift+Tab`)
+- Tabs (`Ctrl+T`, `Ctrl+W`, `Ctrl+Tab`, `Ctrl+Shift+Tab`); open tabs can be reordered by dragging
 - List and Grid views — List uses lightweight Windows Shell type icons; Grid loads content thumbnails
 - Global List columns and sort configuration
 - Natural filename sorting (`file2` before `file10`)
@@ -320,7 +320,7 @@ Ferry/
 ├─ Ferry_SPEC_v1.1.md            current v1.1 release specification
 ├─ Ferry_SPEC_v1.0.md            historical v1.0 baseline
 ├─ TEST_CHECKLIST.md             regression checklist
-├─ RELEASE_NOTES_v1.1.3.md       Current release notes
+├─ RELEASE_NOTES_v1.1.5.md       Current release notes
 ├─ CHANGELOG.md
 ├─ LICENSE.txt
 ├─ README.md

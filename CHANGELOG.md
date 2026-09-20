@@ -1,5 +1,24 @@
 ﻿# Ferry Changelog
 
+## [1.1.5] - 2026-09-20
+
+### Added
+- 複数タブをマウスD&Dで左右へ並べ替えられるようにした。ドロップ位置は対象タブの左右半分で判定し、移動後もドラッグしたタブを選択状態に保つ。
+- Sidebarの通常フォルダー（Home / 標準ユーザーフォルダー / Drives）に右クリックメニューを追加し、**Open**、Open in New Tab、Open in New Ferry Window、Open Terminal Here、Open in Explorer、Properties、Show more optionsを利用可能にした。
+- Pinned folderにも同じSidebarフォルダーメニューを適用し、従来の **Unpin** を維持した。
+
+### Preserved
+- タブ並べ替えは専用の `Ferry.TabItem` D&D formatを使用し、既存のファイルD&D / Ferry→Ferry D&D / Pinned folder並べ替えとは分離。
+- タブCloseボタンからは並べ替えドラッグを開始しない。
+- v1.1.4 responsive Shell transfer、v1.1.3 removable-drive lifecycle、v1.1.2 external D&D Move completion、v1.1.1 Paste-result feedback、v1.1.0 selection behaviorを変更しない。
+
+### Validated
+- Windows GitHub Actions `Build.cmd`: PASS。
+- 3タブ程度での左右ドラッグ並べ替え: PASS。
+- タブの `×` Close操作が従来どおり機能: PASS。
+- Sidebar folder右クリック → **Open**: PASS。
+- Pinned folder右クリックで **Unpin** が維持されること: PASS。
+
 ## [1.1.4] - 2026-09-20
 
 ### Fixed

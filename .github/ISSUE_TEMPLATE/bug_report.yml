@@ -7,7 +7,7 @@ body:
     id: version
     attributes:
       label: Ferry version
-      placeholder: v1.1.4
+      placeholder: v1.1.5
     validations:
       required: true
   - type: input
