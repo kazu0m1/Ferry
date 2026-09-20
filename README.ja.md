@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.1.3  
+> **現在のリリース:** v1.1.4  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.1.3 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.3-win-portable.zip)**
+**[Ferry v1.1.4 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.4-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -49,6 +49,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 - **強力な一括リネーム** — 置換・連番・開始番号指定・ライブプレビュー
 - **タブ** — 必要十分なタブブラウジング
 - **Windowsとの自然な統合** — ごみ箱、プロパティ、詳細Shellメニュー、ショートカット、D&D
+- **大容量転送中も応答性を維持** — Windows ShellのCopy/Move中もFerryを最小化・復元でき、タブ切替やフォルダー移動を継続可能。Ferry同士のD&Dでも送受信側の両方を操作可能
 - **リムーバブルドライブ対応** — Ferry起動後に接続したドライブを自動反映し、安全な取り外し時は対象タブと監視を解放してから取り外し
 - **Explorer互換のD&D** — FerryからWindows Explorerへの通常Moveで、destinationへ移動したitemがsource側へ残らない
 - **Paste結果の可視化** — Copy/Cut → Paste後、今回貼り付けたdestination項目が選択状態で残り、何を貼り付けたかすぐ分かる
@@ -65,7 +66,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.1.3-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.1.4-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -80,7 +81,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.1.3の初期設定
+## v1.1.4の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -160,6 +161,8 @@ Windows管理のごみ箱をFerry内の仮想ビューとして表示します�
 - Empty Recycle Bin
 
 ### Windows連携 / ファイル操作
+
+長時間のCopy/Moveは専用STA workerで実行し、FerryのWPF Dispatcherを塞ぎません。Ferry→FerryのD&Dでは受信側がDropを速やかに受理して制御を返し、その後もWindows Shell transferを継続するため、送受信側の両方を操作できます。
 
 - Copy / Cut / Paste
 - Recycle Binへの削除 / 完全削除
@@ -270,7 +273,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.1.3-win-portable.zip
+dist\Ferry-v1.1.4-win-portable.zip
 ```
 
 です。
