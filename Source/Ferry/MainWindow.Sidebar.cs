@@ -150,7 +150,43 @@ namespace Ferry
         private void AddSidebarButton(string text, string path)
         {
             Button button = SidebarButton(text); button.Tag = path; button.ToolTip = path; button.Click += delegate { Navigate(path, true); };
+            button.ContextMenu = CreateSidebarPathContextMenu(path, false);
             sidebarPanel.Children.Add(button);
+        }
+
+        private ContextMenu CreateSidebarPathContextMenu(string path, bool includeUnpin)
+        {
+            ContextMenu menu = new ContextMenu();
+            menu.Items.Add(Item("Open", delegate { Navigate(path, true); }));
+            menu.Items.Add(Item("Open in New Tab", delegate { OpenNewTab(path, true); }));
+            menu.Items.Add(Item("Open in New Ferry Window", delegate { new MainWindow(settings, path).Show(); }));
+            menu.Items.Add(new Separator());
+
+            MenuItem terminal = Item("Open Terminal Here", delegate { ShellInterop.OpenTerminal(settings.TerminalCommand, settings.TerminalArguments, path); });
+            terminal.IsEnabled = Directory.Exists(path);
+            menu.Items.Add(terminal);
+            menu.Items.Add(Item("Open in Explorer", delegate { ShellInterop.OpenExplorer(path, false); }));
+            menu.Items.Add(Item("Properties", delegate { ShellInterop.ShowProperties(this, path); }));
+
+            if (includeUnpin)
+            {
+                menu.Items.Add(new Separator());
+                menu.Items.Add(Item("Unpin", delegate
+                {
+                    settings.PinnedFolders.RemoveAll(delegate(string p) { return string.Equals(p, path, StringComparison.OrdinalIgnoreCase); });
+                    try { SettingsStore.Save(settings); } catch { }
+                    BuildSidebar();
+                }));
+            }
+
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Show more options", delegate
+            {
+                Point point = PointToScreen(Mouse.GetPosition(this));
+                List<string> paths = new List<string>(); paths.Add(path);
+                if (!ShellContextMenu.Show(this, paths, point)) ShellInterop.OpenExplorer(path, false);
+            }));
+            return menu;
         }
 
         private void BuildPinnedSidebarList()
@@ -195,19 +231,6 @@ namespace Ferry
             itemStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             itemStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
             pinnedListBox.ItemContainerStyle = itemStyle;
-
-            ContextMenu menu = new ContextMenu();
-            MenuItem unpin = new MenuItem { Header = "Unpin" };
-            unpin.Click += delegate
-            {
-                PinnedSidebarItem item = pinnedListBox != null ? pinnedListBox.SelectedItem as PinnedSidebarItem : null;
-                if (item == null) return;
-                settings.PinnedFolders.RemoveAll(delegate(string p) { return string.Equals(p, item.FullPath, StringComparison.OrdinalIgnoreCase); });
-                try { SettingsStore.Save(settings); } catch { }
-                BuildSidebar();
-            };
-            menu.Items.Add(unpin);
-            pinnedListBox.ContextMenu = menu;
 
             pinnedListBox.PreviewMouseLeftButtonDown += PinnedListMouseLeftButtonDown;
             pinnedListBox.PreviewMouseLeftButtonUp += PinnedListMouseLeftButtonUp;
@@ -296,7 +319,9 @@ namespace Ferry
         {
             if (pinnedListBox == null) return;
             ListBoxItem container = GetPinnedListItem(e.OriginalSource as DependencyObject);
-            if (container != null) pinnedListBox.SelectedItem = container.DataContext;
+            PinnedSidebarItem item = container != null ? container.DataContext as PinnedSidebarItem : null;
+            pinnedListBox.SelectedItem = item;
+            pinnedListBox.ContextMenu = item != null ? CreateSidebarPathContextMenu(item.FullPath, true) : null;
         }
 
         private int GetPinnedDropSlot(Point pointer)
