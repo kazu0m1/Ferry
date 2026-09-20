@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -216,12 +217,9 @@ namespace Ferry
 
         private void TabsDragOver(object sender, DragEventArgs e)
         {
-            if (tabs == null || !e.Data.GetDataPresent(TabDragFormat))
-            {
-                e.Effects = DragDropEffects.None;
-                e.Handled = true;
-                return;
-            }
+            // This handler owns only Ferry's in-process tab drag format. Let file/shell D&D
+            // continue to the existing view handlers unchanged.
+            if (tabs == null || !e.Data.GetDataPresent(TabDragFormat)) return;
 
             TabItem source = e.Data.GetData(TabDragFormat) as TabItem;
             TabItem target = FindTabItemFromSource(e.OriginalSource as DependencyObject, true);
