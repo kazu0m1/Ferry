@@ -17,3 +17,9 @@ jobs:
       - name: Build Ferry
         shell: cmd
         run: Build.cmd
+      - name: Upload candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ferry-v1.1.5-candidate
+          path: Portable/
+          if-no-files-found: error
