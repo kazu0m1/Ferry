@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.1.6  
+> **Current release:** v1.1.7  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.1.6 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.6-win-portable.zip)**
+**[Download Ferry v1.1.7 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.7-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -73,7 +73,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.1.6-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.1.7-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -118,6 +118,7 @@ A custom terminal command and arguments can be set in **Settings**.
 - Sidebar width is configurable from 50–480; double-click the divider to auto-fit visible labels
 - Breadcrumb navigation; `Ctrl+L` opens the Location Box, `Esc` or `Ctrl+L` again returns to Breadcrumb
 - Back / Forward / Up / Home
+- **Back restores context** — when returning from a child folder to its parent, Ferry reselects that folder and aligns it to the top of List view
 - Tabs (`Ctrl+T`, `Ctrl+W`, `Ctrl+Tab`, `Ctrl+Shift+Tab`); open tabs can be reordered by dragging
 - List and Grid views — List uses lightweight Windows Shell type icons; Grid loads content thumbnails
 - Global List columns and sort configuration
@@ -189,6 +190,7 @@ Ferry delegates Windows-owned behavior where practical:
 
 Long Copy/Move operations are executed on a dedicated STA worker while Ferry's WPF Dispatcher remains responsive. Ferry-to-Ferry drops return promptly so both the sending and receiving Ferry windows remain usable during the transfer.
 
+- New Text Document from Ferry's lightweight background context menu
 - Copy / Cut / Paste
 - delete to Recycle Bin / permanent delete
 - drag & drop
