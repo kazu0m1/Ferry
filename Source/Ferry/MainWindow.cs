@@ -2980,10 +2980,30 @@ namespace Ferry
                         return;
 
                     ListView activeList = visible as ListView;
-                    if (activeList != null) activeList.ScrollIntoView(target);
+                    if (activeList != null)
+                    {
+                        activeList.ScrollIntoView(target);
+                        activeList.UpdateLayout();
+
+                        // ScrollIntoView only guarantees visibility and commonly leaves the
+                        // restored folder on the bottom row. For Back navigation in List view,
+                        // place that folder at the top of the viewport like Explorer.
+                        ScrollViewer scroll = FindVisualChild<ScrollViewer>(activeList);
+                        int targetIndex = activeList.Items.IndexOf(target);
+                        if (scroll != null && targetIndex >= 0)
+                        {
+                            scroll.ScrollToVerticalOffset(targetIndex);
+                            activeList.UpdateLayout();
+                        }
+                    }
+
                     ListBox activeGrid = visible as ListBox;
-                    if (activeGrid != null) activeGrid.ScrollIntoView(target);
-                    visible.UpdateLayout();
+                    if (activeGrid != null)
+                    {
+                        activeGrid.ScrollIntoView(target);
+                        activeGrid.UpdateLayout();
+                    }
+
                     FocusSelectorItem(visible, target);
                 }));
             }
