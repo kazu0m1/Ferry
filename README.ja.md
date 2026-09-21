@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.1.6  
+> **現在のリリース:** v1.1.7  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.1.6 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.6-win-portable.zip)**
+**[Ferry v1.1.7 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.7-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -67,7 +67,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.1.6-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.1.7-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -82,7 +82,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.1.6の初期設定
+## v1.1.7の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -111,6 +111,7 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 - Sidebar幅は50～480で設定可能。境界をダブルクリックすると表示文字列幅へ自動フィット
 - Breadcrumb（`Ctrl+L`でLocation Box、`Esc`または再度`Ctrl+L`でBreadcrumbへ復帰）
 - Back / Forward / Up / Home
+- 子フォルダーから **Back** で親へ戻ると、直前に開いていたフォルダーを再選択・フォーカスし、Listでは画面最上部へ表示
 - Tabs（ドラッグで左右に並べ替え可能）
 - List / Grid（Listは軽量なWindows Shell種別アイコン、Gridは内容サムネイル）
 - Natural Sort
@@ -123,6 +124,7 @@ MSYS2/UCRT64などを使いたい場合は、Settingsで任意のコマンドと
 - ダウンロード中の`.crdownload`などは位置を動かさずSize/Modifiedを更新
 - `F12`で、選択状態に関係なく現在フォルダーにTerminalを開く
 - Copy/Cut → Paste後、今回のトップレベルdestination項目を選択状態で残す。次のPasteでは前回結果を引き継がず、今回の結果だけを選択
+- 背景のFerry右クリックメニューから **New Text Document** を作成し、そのままインラインRename可能
 
 - Explorerライクなラバーバンド（矩形）範囲選択（List / Grid、Ctrl / Shift / Ctrl+Shift、画面端autoscroll対応）
 - Selection Anchorを破線で可視化
@@ -275,7 +277,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.1.6-win-portable.zip
+dist\Ferry-v1.1.7-win-portable.zip
 ```
 
 です。
