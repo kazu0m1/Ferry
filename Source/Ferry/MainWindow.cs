@@ -1246,6 +1246,7 @@ namespace Ferry
             else
             {
                 menu.Items.Add(Item("New Folder", delegate { CreateNewFolder(state); }));
+                menu.Items.Add(Item("New Text Document", delegate { CreateNewTextDocument(state); }));
                 MenuItem paste = Item("Paste", delegate { Paste(state); }); paste.IsEnabled = ClipboardHelper.CanPaste(); menu.Items.Add(paste);
                 menu.Items.Add(Item("Refresh", delegate { SafeRefreshFolderIncremental(state, true); }));
                 MenuItem terminalHere = Item("Open Terminal Here", delegate { OpenTerminalHere(state); }); terminalHere.InputGestureText = "F12"; menu.Items.Add(terminalHere);
@@ -2268,6 +2269,11 @@ namespace Ferry
 
         private void LoadFolder(TabState state, string path, bool addHistory)
         {
+            LoadFolder(state, path, addHistory, null);
+        }
+
+        private void LoadFolder(TabState state, string path, bool addHistory, string focusPath)
+        {
             if (state == null) return;
             if (TabState.IsRecycleBinPath(path)) { LoadRecycleBin(state, addHistory); return; }
             if (!Directory.Exists(path)) return;
@@ -2297,7 +2303,7 @@ namespace Ferry
                     Dispatcher.BeginInvoke(new Action(delegate
                     {
                         if (token.IsCancellationRequested || state.CurrentPath != expected) return;
-                        ApplySort(state, false); StartDeferredMetadata(state, expected, token, true); UpdateStatus();
+                        ApplySort(state, false); RestoreNavigationFocus(state, expected, focusPath); StartDeferredMetadata(state, expected, token, true); UpdateStatus();
                     }));
                 }
                 catch (OperationCanceledException) { }
@@ -2903,8 +2909,88 @@ namespace Ferry
 
         private void GoBack()
         {
-            TabState state = ActiveState; if (state == null || state.BackHistory.Count == 0) return; string dest = state.BackHistory[state.BackHistory.Count - 1]; state.BackHistory.RemoveAt(state.BackHistory.Count - 1); state.ForwardHistory.Add(state.CurrentPath); LoadFolder(state, dest, false);
+            TabState state = ActiveState;
+            if (state == null || state.BackHistory.Count == 0) return;
+
+            string current = state.CurrentPath;
+            string dest = state.BackHistory[state.BackHistory.Count - 1];
+            string focusPath = GetBackNavigationFocusPath(current, dest);
+
+            state.BackHistory.RemoveAt(state.BackHistory.Count - 1);
+            state.ForwardHistory.Add(current);
+            LoadFolder(state, dest, false, focusPath);
         }
+        private string GetBackNavigationFocusPath(string currentPath, string destinationPath)
+        {
+            if (string.IsNullOrEmpty(currentPath) || string.IsNullOrEmpty(destinationPath)) return null;
+            if (TabState.IsRecycleBinPath(currentPath) || TabState.IsRecycleBinPath(destinationPath)) return null;
+
+            try
+            {
+                string trimmed = currentPath.TrimEnd('\\', '/');
+                string parent = Path.GetDirectoryName(trimmed);
+                if (!string.IsNullOrEmpty(parent) && SamePath(parent, destinationPath))
+                    return Path.GetFullPath(currentPath);
+            }
+            catch { }
+
+            return null;
+        }
+
+        private void RestoreNavigationFocus(TabState state, string expectedPath, string focusPath)
+        {
+            if (state == null || string.IsNullOrEmpty(focusPath) || !contexts.ContainsKey(state.Id)) return;
+            if (!SamePath(state.CurrentPath, expectedPath)) return;
+
+            FileItem target = null;
+            for (int i = 0; i < state.Items.Count; i++)
+            {
+                FileItem candidate = state.Items[i];
+                if (candidate != null && SamePath(candidate.FullPath, focusPath))
+                {
+                    target = candidate;
+                    break;
+                }
+            }
+            if (target == null) return;
+
+            TabViewContext ctx = contexts[state.Id];
+            SetSingleSelection(ctx.ListView, target);
+            SetSingleSelection(ctx.GridView, target);
+            ctx.SelectionAnchorItem = target;
+            ctx.KeyboardNavigationItem = target;
+            SetExtendedSelectionAnchorOnly(ctx.ListView, target);
+            SetExtendedSelectionAnchorOnly(ctx.GridView, target);
+            UpdateSelectionAnchorVisual(ctx);
+
+            Selector visible = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)
+                ? (Selector)ctx.GridView
+                : (Selector)ctx.ListView;
+
+            ListView listView = visible as ListView;
+            if (listView != null) listView.ScrollIntoView(target);
+            ListBox listBox = visible as ListBox;
+            if (listBox != null) listBox.ScrollIntoView(target);
+
+            if (ctx == ActiveContext)
+            {
+                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate
+                {
+                    if (!contexts.ContainsKey(state.Id) || ctx != ActiveContext || !SamePath(state.CurrentPath, expectedPath) || !state.Items.Contains(target))
+                        return;
+
+                    ListView activeList = visible as ListView;
+                    if (activeList != null) activeList.ScrollIntoView(target);
+                    ListBox activeGrid = visible as ListBox;
+                    if (activeGrid != null) activeGrid.ScrollIntoView(target);
+                    visible.UpdateLayout();
+                    FocusSelectorItem(visible, target);
+                }));
+            }
+
+            UpdateStatus();
+        }
+
         private void GoForward()
         {
             TabState state = ActiveState; if (state == null || state.ForwardHistory.Count == 0) return; string dest = state.ForwardHistory[state.ForwardHistory.Count - 1]; state.ForwardHistory.RemoveAt(state.ForwardHistory.Count - 1); state.BackHistory.Add(state.CurrentPath); LoadFolder(state, dest, false);
@@ -3494,6 +3580,43 @@ namespace Ferry
                 BeginInlineRename(state, item);
             }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void CreateNewTextDocument(TabState state)
+        {
+            if (state == null || state.IsRecycleBin || state.IsSearching || !contexts.ContainsKey(state.Id)) return;
+            try
+            {
+                InvalidateRenameUndo();
+                string baseName = "New Text Document";
+                string path = Path.Combine(state.CurrentPath, baseName + ".txt");
+                int n = 2;
+                while (Directory.Exists(path) || File.Exists(path))
+                    path = Path.Combine(state.CurrentPath, baseName + " (" + n++ + ").txt");
+
+                using (FileStream stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read))
+                {
+                }
+
+                FileItem item = CreateBasicItem(path, null);
+                if (item == null) { ScheduleFolderRefresh(state); return; }
+                try
+                {
+                    item.ListIcon = ShellInterop.GetSmallTypeIcon(path, false);
+                    if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase))
+                        item.Icon = ShellInterop.GetThumbnailOrIcon(path, (int)settings.GridIconSize);
+                }
+                catch { }
+
+                state.MarkUnsortedTail(path);
+                state.Items.Add(item);
+                ApplySort(state, true, false);
+                BeginInlineRename(state, item);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void CreateShortcut(IList<string> paths)
