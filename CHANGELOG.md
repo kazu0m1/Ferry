@@ -1,5 +1,21 @@
 ﻿# Ferry Changelog
 
+## [1.1.7] - 2026-09-21
+
+### Added
+- Ferryの軽量な背景右クリックメニューに **New Text Document** を追加した。
+- 空の `.txt` をcollision-safeな名前で作成し、そのまま既存のinline renameへ入るようにした。
+
+### Changed
+- 子フォルダーを開いた後に **Back** で親フォルダーへ戻ると、直前に開いていたフォルダーを再選択・フォーカスするようにした。
+- List viewでは、その復元対象フォルダーをviewportの最上部へ揃えて表示し、戻った位置をすぐ確認できるようにした。
+
+### Validated
+- Windows GitHub Actions `Build.cmd`: PASS。
+- 項目数の多い親フォルダーで下方の子フォルダーを開き、Backで戻った際に対象フォルダーが選択・フォーカスされること: PASS。
+- 対象フォルダーがList view最上部へ表示されること: PASS。
+- 背景右クリック → **New Text Document** で `.txt` を作成し、そのままファイル名編集状態になること: PASS。
+
 ## [1.1.6] - 2026-09-20
 
 ### Added
