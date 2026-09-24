@@ -64,119 +64,40 @@ namespace Ferry
         }
     }
 
+    // Temporary compatibility helper for prototype builds that previously stored
+    // To-Do data in config\todo.json. New builds persist To-Do inside settings.json.
     internal static class TodoStore
     {
-        private static string TodoDirectory
+        public static string LegacyTodoPath
         {
-            get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config"); }
+            get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config", "todo.json"); }
         }
 
-        public static string TodoPath
+        public static bool TryLoadLegacy(out List<TodoEntry> entries)
         {
-            get { return Path.Combine(TodoDirectory, "todo.json"); }
-        }
-
-        public static List<TodoEntry> Load()
-        {
+            entries = null;
             try
             {
-                if (!File.Exists(TodoPath)) return new List<TodoEntry>();
-                string json = File.ReadAllText(TodoPath, Encoding.UTF8);
+                if (!File.Exists(LegacyTodoPath)) return false;
+                string json = File.ReadAllText(LegacyTodoPath, Encoding.UTF8);
                 JavaScriptSerializer serializer = new JavaScriptSerializer();
-                List<TodoEntry> entries = serializer.Deserialize<List<TodoEntry>>(json);
-                return entries ?? new List<TodoEntry>();
+                entries = serializer.Deserialize<List<TodoEntry>>(json) ?? new List<TodoEntry>();
+                return true;
             }
             catch
             {
-                return new List<TodoEntry>();
+                entries = null;
+                return false;
             }
         }
 
-        public static void Save(IList<TodoEntry> entries)
+        public static void DeleteLegacy()
         {
-            Directory.CreateDirectory(TodoDirectory);
-            List<TodoEntry> snapshot = new List<TodoEntry>();
-            if (entries != null)
+            try
             {
-                for (int i = 0; i < entries.Count; i++)
-                {
-                    TodoEntry source = entries[i];
-                    if (source == null) continue;
-                    snapshot.Add(new TodoEntry { Text = source.Text, Memo = source.Memo });
-                }
+                if (File.Exists(LegacyTodoPath)) File.Delete(LegacyTodoPath);
             }
-
-            JavaScriptSerializer serializer = new JavaScriptSerializer();
-            string json = PrettyJson(serializer.Serialize(snapshot));
-            string temp = TodoPath + ".tmp";
-            File.WriteAllText(temp, json, new UTF8Encoding(false));
-
-            if (File.Exists(TodoPath))
-            {
-                string backup = TodoPath + ".bak";
-                try
-                {
-                    File.Replace(temp, TodoPath, backup, true);
-                    if (File.Exists(backup)) File.Delete(backup);
-                }
-                catch
-                {
-                    File.Delete(TodoPath);
-                    File.Move(temp, TodoPath);
-                }
-            }
-            else
-            {
-                File.Move(temp, TodoPath);
-            }
-        }
-
-        private static string PrettyJson(string json)
-        {
-            StringBuilder output = new StringBuilder();
-            bool quoted = false;
-            bool escaped = false;
-            int indent = 0;
-
-            for (int i = 0; i < json.Length; i++)
-            {
-                char c = json[i];
-                if (c == '"' && !escaped) quoted = !quoted;
-
-                if (!quoted && (c == '{' || c == '['))
-                {
-                    output.Append(c);
-                    output.AppendLine();
-                    indent++;
-                    output.Append(new string(' ', indent * 2));
-                }
-                else if (!quoted && (c == '}' || c == ']'))
-                {
-                    output.AppendLine();
-                    indent--;
-                    output.Append(new string(' ', indent * 2));
-                    output.Append(c);
-                }
-                else if (!quoted && c == ',')
-                {
-                    output.Append(c);
-                    output.AppendLine();
-                    output.Append(new string(' ', indent * 2));
-                }
-                else if (!quoted && c == ':')
-                {
-                    output.Append(": ");
-                }
-                else
-                {
-                    output.Append(c);
-                }
-
-                escaped = c == '\\' && !escaped;
-                if (c != '\\') escaped = false;
-            }
-
-            return output.ToString();
+            catch { }
         }
     }
 }
