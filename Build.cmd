@@ -85,6 +85,7 @@ echo Building Ferry.exe...
  "Source\Ferry\MainWindow.DriveNotifications.cs" ^
  "Source\Ferry\MainWindow.PasteFeedback.cs" ^
  "Source\Ferry\MainWindow.Sidebar.cs" ^
+ "Source\Ferry\MainWindow.Todo.cs" ^
  "Source\Ferry\MainWindow.TabViewContext.cs" ^
  "Source\Ferry\MainWindow.UI.cs" ^
  "Source\Ferry\NaturalStringComparer.cs" ^
@@ -107,6 +108,7 @@ echo Building Ferry.exe...
  "Source\Ferry\ShellInterop.cs" ^
  "Source\Ferry\ShortcutHelper.cs" ^
  "Source\Ferry\TabState.cs" ^
+ "Source\Ferry\TodoStore.cs" ^
  "Source\Ferry\VirtualizingWrapPanel.cs"
 
 if errorlevel 1 (
