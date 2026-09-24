@@ -108,7 +108,7 @@ echo Building Ferry.exe...
  "Source\Ferry\ShellInterop.cs" ^
  "Source\Ferry\ShortcutHelper.cs" ^
  "Source\Ferry\TabState.cs" ^
- "Source\Ferry\TodoStore.cs" ^
+ "Source\Ferry\TodoEntry.cs" ^
  "Source\Ferry\VirtualizingWrapPanel.cs"
 
 if errorlevel 1 (
