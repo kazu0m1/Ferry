@@ -1,0 +1,29 @@
+name: Validate Ferry v1.2.0 To-Do prototype
+
+on:
+  push:
+    branches:
+      - feature/v1.2.0-todo-prototype
+    paths:
+      - .github/workflows/validate-v1.2.0-todo.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout prototype
+        uses: actions/checkout@v4
+
+      - name: Build
+        shell: cmd
+        run: Build.cmd
+
+      - name: Upload portable prototype
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ferry-v1.2.0-todo-prototype
+          path: Portable/
+          if-no-files-found: error
