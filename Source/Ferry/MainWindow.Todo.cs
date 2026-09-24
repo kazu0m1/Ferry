@@ -16,9 +16,11 @@ namespace Ferry
         private const string TodoMemoEditorTag = "Ferry.Todo.Memo";
 
         private TabItem todoTabItem;
-        private ItemsControl todoItemsControl;
+        private StackPanel todoRowsPanel;
         private ObservableCollection<TodoEntry> todoEntries;
         private DispatcherTimer todoSaveTimer;
+        private readonly Dictionary<TodoEntry, TextBox> todoLeftEditors = new Dictionary<TodoEntry, TextBox>();
+        private readonly Dictionary<TodoEntry, TextBox> todoMemoEditors = new Dictionary<TodoEntry, TextBox>();
 
         private bool IsTodoTabActive
         {
@@ -36,9 +38,11 @@ namespace Ferry
                 return;
             }
 
-            todoTabItem = new TabItem();
-            todoTabItem.Content = BuildTodoView();
-            todoTabItem.Header = BuildTodoTabHeader();
+            todoTabItem = new TabItem
+            {
+                Content = BuildTodoView(),
+                Header = BuildTodoTabHeader()
+            };
 
             tabs.Items.Add(todoTabItem);
             tabs.SelectedItem = todoTabItem;
@@ -81,21 +85,22 @@ namespace Ferry
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-            Grid heading = new Grid
-            {
-                Background = SystemColors.ControlBrush,
-                Height = 32
-            };
-            heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid heading = CreateTodoTwoColumnGrid();
+            heading.Height = 32;
+            heading.Background = SystemColors.ControlBrush;
 
             Border leftHeading = new Border
             {
                 BorderBrush = SystemColors.ControlDarkBrush,
                 BorderThickness = new Thickness(0, 0, 1, 1),
-                Padding = new Thickness(10, 5, 8, 5)
+                Padding = new Thickness(10, 5, 8, 5),
+                Child = new TextBlock
+                {
+                    Text = "To-Do",
+                    FontWeight = FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
             };
-            leftHeading.Child = new TextBlock { Text = "To-Do", FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
             heading.Children.Add(leftHeading);
             Grid.SetColumn(leftHeading, 0);
 
@@ -103,21 +108,30 @@ namespace Ferry
             {
                 BorderBrush = SystemColors.ControlDarkBrush,
                 BorderThickness = new Thickness(0, 0, 0, 1),
-                Padding = new Thickness(10, 5, 8, 5)
+                Padding = new Thickness(10, 5, 8, 5),
+                Child = new TextBlock
+                {
+                    Text = "Memo",
+                    FontWeight = FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
             };
-            rightHeading.Child = new TextBlock { Text = "Memo", FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
             heading.Children.Add(rightHeading);
             Grid.SetColumn(rightHeading, 1);
 
             root.Children.Add(heading);
             Grid.SetRow(heading, 0);
 
-            todoItemsControl = new ItemsControl { ItemsSource = todoEntries };
-            todoItemsControl.ItemTemplate = BuildTodoItemTemplate();
+            todoRowsPanel = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Background = SystemColors.WindowBrush
+            };
+            RebuildTodoRows();
 
             ScrollViewer scroll = new ScrollViewer
             {
-                Content = todoItemsControl,
+                Content = todoRowsPanel,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 CanContentScroll = false,
@@ -129,109 +143,130 @@ namespace Ferry
             return root;
         }
 
-        private DataTemplate BuildTodoItemTemplate()
+        private Grid CreateTodoTwoColumnGrid()
         {
-            DataTemplate template = new DataTemplate(typeof(TodoEntry));
-
-            FrameworkElementFactory rowBorder = new FrameworkElementFactory(typeof(Border));
-            rowBorder.SetValue(Border.BorderBrushProperty, SystemColors.ControlLightBrush);
-            rowBorder.SetValue(Border.BorderThicknessProperty, new Thickness(0, 0, 0, 1));
-            rowBorder.SetValue(Border.BackgroundProperty, SystemColors.WindowBrush);
-
-            FrameworkElementFactory row = new FrameworkElementFactory(typeof(Grid));
-            row.SetValue(FrameworkElement.MinHeightProperty, 38.0);
-            rowBorder.AppendChild(row);
-
-            FrameworkElementFactory leftColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
-            leftColumn.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
-            row.AppendChild(leftColumn);
-            FrameworkElementFactory rightColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
-            rightColumn.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
-            row.AppendChild(rightColumn);
-
-            FrameworkElementFactory leftBorder = new FrameworkElementFactory(typeof(Border));
-            leftBorder.SetValue(Grid.ColumnProperty, 0);
-            leftBorder.SetValue(Border.BorderBrushProperty, SystemColors.ControlDarkBrush);
-            leftBorder.SetValue(Border.BorderThicknessProperty, new Thickness(0, 0, 1, 0));
-            row.AppendChild(leftBorder);
-
-            FrameworkElementFactory left = new FrameworkElementFactory(typeof(Grid));
-            leftBorder.AppendChild(left);
-
-            FrameworkElementFactory leftNumberColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
-            leftNumberColumn.SetValue(ColumnDefinition.WidthProperty, GridLength.Auto);
-            left.AppendChild(leftNumberColumn);
-            FrameworkElementFactory leftTextColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
-            leftTextColumn.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
-            left.AppendChild(leftTextColumn);
-
-            FrameworkElementFactory leftNumber = CreateTodoNumberFactory(0);
-            left.AppendChild(leftNumber);
-
-            FrameworkElementFactory leftEditor = CreateTodoEditorFactory("Text", TodoLeftEditorTag);
-            leftEditor.SetValue(Grid.ColumnProperty, 1);
-            leftEditor.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(TodoLeftPreviewKeyDown));
-            left.AppendChild(leftEditor);
-
-            FrameworkElementFactory right = new FrameworkElementFactory(typeof(Grid));
-            right.SetValue(Grid.ColumnProperty, 1);
-            row.AppendChild(right);
-
-            FrameworkElementFactory rightNumberColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
-            rightNumberColumn.SetValue(ColumnDefinition.WidthProperty, GridLength.Auto);
-            right.AppendChild(rightNumberColumn);
-            FrameworkElementFactory rightTextColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
-            rightTextColumn.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
-            right.AppendChild(rightTextColumn);
-
-            FrameworkElementFactory rightNumber = CreateTodoNumberFactory(0);
-            right.AppendChild(rightNumber);
-
-            FrameworkElementFactory memoEditor = CreateTodoEditorFactory("Memo", TodoMemoEditorTag);
-            memoEditor.SetValue(Grid.ColumnProperty, 1);
-            right.AppendChild(memoEditor);
-
-            template.VisualTree = rowBorder;
-            return template;
+            Grid grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            return grid;
         }
 
-        private FrameworkElementFactory CreateTodoNumberFactory(int column)
+        private void RebuildTodoRows()
         {
-            FrameworkElementFactory number = new FrameworkElementFactory(typeof(TextBlock));
-            Binding numberBinding = new Binding("Number") { StringFormat = "{0}." };
-            number.SetBinding(TextBlock.TextProperty, numberBinding);
-            number.SetValue(Grid.ColumnProperty, column);
-            number.SetValue(FrameworkElement.WidthProperty, 42.0);
-            number.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 7, 0, 5));
-            number.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Right);
-            number.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
-            number.SetValue(FrameworkElement.ToolTipProperty, "Right-click the number to delete this item");
-            number.AddHandler(UIElement.PreviewMouseRightButtonDownEvent, new MouseButtonEventHandler(TodoNumberPreviewMouseRightButtonDown));
+            if (todoRowsPanel == null || todoEntries == null) return;
+
+            todoRowsPanel.Children.Clear();
+            todoLeftEditors.Clear();
+            todoMemoEditors.Clear();
+
+            for (int i = 0; i < todoEntries.Count; i++)
+            {
+                TodoEntry entry = todoEntries[i];
+                if (entry != null) todoRowsPanel.Children.Add(CreateTodoRow(entry));
+            }
+        }
+
+        private UIElement CreateTodoRow(TodoEntry entry)
+        {
+            Border rowBorder = new Border
+            {
+                BorderBrush = SystemColors.ControlLightBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Background = SystemColors.WindowBrush,
+                MinHeight = 38
+            };
+
+            // One physical Grid owns both editors. Its row height is therefore the larger of the
+            // left and right content heights, so the next numbered pair always begins at the same Y.
+            Grid row = CreateTodoTwoColumnGrid();
+            rowBorder.Child = row;
+
+            Border leftBorder = new Border
+            {
+                BorderBrush = SystemColors.ControlDarkBrush,
+                BorderThickness = new Thickness(0, 0, 1, 0),
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            row.Children.Add(leftBorder);
+            Grid.SetColumn(leftBorder, 0);
+
+            Grid left = CreateTodoCellGrid();
+            leftBorder.Child = left;
+
+            TextBlock leftNumber = CreateTodoNumber(entry);
+            left.Children.Add(leftNumber);
+            Grid.SetColumn(leftNumber, 0);
+
+            TextBox leftEditor = CreateTodoEditor(entry, "Text", TodoLeftEditorTag);
+            leftEditor.PreviewKeyDown += TodoLeftPreviewKeyDown;
+            left.Children.Add(leftEditor);
+            Grid.SetColumn(leftEditor, 1);
+            todoLeftEditors[entry] = leftEditor;
+
+            Grid right = CreateTodoCellGrid();
+            row.Children.Add(right);
+            Grid.SetColumn(right, 1);
+
+            TextBlock rightNumber = CreateTodoNumber(entry);
+            right.Children.Add(rightNumber);
+            Grid.SetColumn(rightNumber, 0);
+
+            TextBox memoEditor = CreateTodoEditor(entry, "Memo", TodoMemoEditorTag);
+            right.Children.Add(memoEditor);
+            Grid.SetColumn(memoEditor, 1);
+            todoMemoEditors[entry] = memoEditor;
+
+            return rowBorder;
+        }
+
+        private Grid CreateTodoCellGrid()
+        {
+            Grid cell = new Grid { VerticalAlignment = VerticalAlignment.Stretch };
+            cell.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            cell.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            return cell;
+        }
+
+        private TextBlock CreateTodoNumber(TodoEntry entry)
+        {
+            TextBlock number = new TextBlock
+            {
+                DataContext = entry,
+                Width = 42,
+                Margin = new Thickness(6, 7, 0, 5),
+                TextAlignment = TextAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Top,
+                ToolTip = "Right-click the number to delete this item"
+            };
+            number.SetBinding(TextBlock.TextProperty, new Binding("Number") { StringFormat = "{0}." });
+            number.PreviewMouseRightButtonDown += TodoNumberPreviewMouseRightButtonDown;
             return number;
         }
 
-        private FrameworkElementFactory CreateTodoEditorFactory(string propertyName, string tag)
+        private TextBox CreateTodoEditor(TodoEntry entry, string propertyName, string tag)
         {
-            FrameworkElementFactory editor = new FrameworkElementFactory(typeof(TextBox));
-            Binding binding = new Binding(propertyName)
+            TextBox editor = new TextBox
+            {
+                DataContext = entry,
+                Tag = tag,
+                AcceptsReturn = true,
+                AcceptsTab = true,
+                TextWrapping = TextWrapping.Wrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(8, 6, 8, 6),
+                Background = Brushes.Transparent,
+                VerticalContentAlignment = VerticalAlignment.Top,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                MinHeight = 37
+            };
+            editor.SetBinding(TextBox.TextProperty, new Binding(propertyName)
             {
                 Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
-            };
-            editor.SetBinding(TextBox.TextProperty, binding);
-            editor.SetValue(FrameworkElement.TagProperty, tag);
-            editor.SetValue(TextBox.AcceptsReturnProperty, true);
-            editor.SetValue(TextBox.AcceptsTabProperty, true);
-            editor.SetValue(TextBox.TextWrappingProperty, TextWrapping.Wrap);
-            editor.SetValue(TextBox.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
-            editor.SetValue(TextBox.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
-            editor.SetValue(Control.BorderThicknessProperty, new Thickness(0));
-            editor.SetValue(Control.PaddingProperty, new Thickness(8, 6, 8, 6));
-            editor.SetValue(Control.BackgroundProperty, Brushes.Transparent);
-            editor.SetValue(Control.VerticalContentAlignmentProperty, VerticalAlignment.Top);
-            editor.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Stretch);
-            editor.SetValue(FrameworkElement.MinHeightProperty, 37.0);
-            editor.AddHandler(TextBox.TextChangedEvent, new TextChangedEventHandler(TodoEditorTextChanged));
+            });
+            editor.TextChanged += TodoEditorTextChanged;
             return editor;
         }
 
@@ -274,6 +309,7 @@ namespace Ferry
             if (todoSaveTimer == null) return;
             todoSaveTimer.Stop();
             todoSaveTimer.Start();
+            UpdateStatus();
         }
 
         private void SaveTodoNow()
@@ -312,6 +348,7 @@ namespace Ferry
                 };
                 todoEntries.Insert(index + 1, next);
                 RenumberTodoEntries();
+                RebuildTodoRows();
                 ScheduleTodoSave();
 
                 e.Handled = true;
@@ -333,6 +370,7 @@ namespace Ferry
                 TodoEntry previous = index > 0 ? todoEntries[index - 1] : todoEntries[1];
                 todoEntries.RemoveAt(index);
                 RenumberTodoEntries();
+                RebuildTodoRows();
                 ScheduleTodoSave();
 
                 e.Handled = true;
@@ -376,12 +414,13 @@ namespace Ferry
 
             todoEntries.RemoveAt(index);
             RenumberTodoEntries();
+            RebuildTodoRows();
             ScheduleTodoSave();
 
             TodoEntry target = todoEntries[Math.Min(index, todoEntries.Count - 1)];
             Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate
             {
-                FocusTodoEditor(target, TodoLeftEditorTag, Math.Min(target.Text.Length, target.Text.Length));
+                FocusTodoEditor(target, TodoLeftEditorTag, target.Text.Length);
             }));
         }
 
@@ -397,48 +436,17 @@ namespace Ferry
 
         private void FocusTodoEditor(TodoEntry entry, string tag, int caret)
         {
-            if (entry == null || todoItemsControl == null) return;
+            if (entry == null) return;
 
-            todoItemsControl.UpdateLayout();
-            DependencyObject container = todoItemsControl.ItemContainerGenerator.ContainerFromItem(entry);
-            TextBox editor = FindTodoEditor(container, tag);
-            if (editor == null)
-            {
-                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(delegate
-                {
-                    todoItemsControl.UpdateLayout();
-                    DependencyObject retry = todoItemsControl.ItemContainerGenerator.ContainerFromItem(entry);
-                    TextBox retryEditor = FindTodoEditor(retry, tag);
-                    if (retryEditor == null) return;
-                    retryEditor.Focus();
-                    retryEditor.CaretIndex = Math.Max(0, Math.Min(caret, retryEditor.Text.Length));
-                }));
-                return;
-            }
+            TextBox editor = null;
+            if (string.Equals(tag, TodoMemoEditorTag, StringComparison.Ordinal))
+                todoMemoEditors.TryGetValue(entry, out editor);
+            else
+                todoLeftEditors.TryGetValue(entry, out editor);
 
+            if (editor == null) return;
             editor.Focus();
             editor.CaretIndex = Math.Max(0, Math.Min(caret, editor.Text.Length));
-        }
-
-        private TextBox FindTodoEditor(DependencyObject root, string tag)
-        {
-            if (root == null) return null;
-
-            TextBox own = root as TextBox;
-            if (own != null && string.Equals(Convert.ToString(own.Tag), tag, StringComparison.Ordinal))
-                return own;
-
-            int count = 0;
-            try { count = VisualTreeHelper.GetChildrenCount(root); }
-            catch { return null; }
-
-            for (int i = 0; i < count; i++)
-            {
-                TextBox found = FindTodoEditor(VisualTreeHelper.GetChild(root, i), tag);
-                if (found != null) return found;
-            }
-
-            return null;
         }
 
         private void CloseTodoTab()
@@ -450,7 +458,9 @@ namespace Ferry
                 tabs.Items.Remove(todoTabItem);
 
             todoTabItem = null;
-            todoItemsControl = null;
+            todoRowsPanel = null;
+            todoLeftEditors.Clear();
+            todoMemoEditors.Clear();
 
             if (tabs.Items.Count == 0)
                 Close();
