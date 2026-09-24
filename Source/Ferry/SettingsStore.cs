@@ -20,20 +20,25 @@ namespace Ferry
 
         public static AppSettings Load()
         {
+            AppSettings settings = null;
             try
             {
-                if (!File.Exists(SettingsPath))
-                    return new AppSettings();
-                string json = File.ReadAllText(SettingsPath, Encoding.UTF8);
-                JavaScriptSerializer serializer = new JavaScriptSerializer();
-                AppSettings settings = serializer.Deserialize<AppSettings>(json);
-                Normalize(settings);
-                return settings;
+                if (File.Exists(SettingsPath))
+                {
+                    string json = File.ReadAllText(SettingsPath, Encoding.UTF8);
+                    JavaScriptSerializer serializer = new JavaScriptSerializer();
+                    settings = serializer.Deserialize<AppSettings>(json);
+                }
             }
             catch
             {
-                return new AppSettings();
+                settings = null;
             }
+
+            if (settings == null) settings = new AppSettings();
+            Normalize(settings);
+            MigrateLegacyTodo(settings);
+            return settings;
         }
 
         public static void Save(AppSettings settings)
@@ -81,6 +86,7 @@ namespace Ferry
             if (s.ColumnWidths == null) s.ColumnWidths = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
             if (s.ColumnOrder == null) s.ColumnOrder = new List<string>(new string[] { "Name", "Items", "Type", "Size", "Modified", "Created" });
             if (s.HiddenColumns == null) s.HiddenColumns = new List<string>(new string[] { "Created" });
+            if (s.TodoEntries == null) s.TodoEntries = new List<TodoEntry>();
             if (s.WindowWidth < 640) s.WindowWidth = 1180;
             if (s.WindowHeight < 480) s.WindowHeight = 760;
             if (s.SidebarWidth < 50) s.SidebarWidth = 220;
@@ -91,6 +97,26 @@ namespace Ferry
             if (s.RubberBandAutoScrollSpeed <= 0) s.RubberBandAutoScrollSpeed = 100;
             else if (s.RubberBandAutoScrollSpeed < 30) s.RubberBandAutoScrollSpeed = 30;
             else if (s.RubberBandAutoScrollSpeed > 300) s.RubberBandAutoScrollSpeed = 300;
+        }
+
+        private static void MigrateLegacyTodo(AppSettings settings)
+        {
+            List<TodoEntry> legacy;
+            if (!TodoStore.TryLoadLegacy(out legacy)) return;
+
+            if ((settings.TodoEntries == null || settings.TodoEntries.Count == 0) && legacy != null && legacy.Count > 0)
+                settings.TodoEntries = legacy;
+
+            // Delete the old file only after the combined settings file has been written.
+            // If writing fails, leave todo.json untouched so no user content is lost.
+            try
+            {
+                Save(settings);
+                TodoStore.DeleteLegacy();
+            }
+            catch
+            {
+            }
         }
 
         private static string PrettyJson(string json)
