@@ -3818,7 +3818,10 @@ namespace Ferry
             TabState state = ActiveState;
             if (state == null)
             {
-                if (statusText != null) { statusText.Text = "Ready"; statusText.ToolTip = "Ready"; }
+                string text = IsTodoTabActive && todoEntries != null
+                    ? "To-Do   •   " + todoEntries.Count.ToString("N0") + " items"
+                    : "Ready";
+                if (statusText != null) { statusText.Text = text; statusText.ToolTip = text; }
                 return;
             }
             List<string> selected = GetSelectedPaths(state);
@@ -3883,7 +3886,7 @@ namespace Ferry
                 }
             }
             if (mods == ModifierKeys.Control && key == Key.T) { OpenNewTab(settings.HomePath, true); e.Handled = true; }
-            else if (mods == ModifierKeys.Control && key == Key.W) { if (state != null) CloseTab(state); e.Handled = true; }
+            else if (mods == ModifierKeys.Control && key == Key.W) { if (IsTodoTabActive) CloseTodoTab(); else if (state != null) CloseTab(state); e.Handled = true; }
             else if (mods == ModifierKeys.Control && key == Key.Tab) { CycleTab(1); e.Handled = true; }
             else if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.Tab) { CycleTab(-1); e.Handled = true; }
             else if (mods == ModifierKeys.Control && key == Key.L) { ToggleLocationBox(); e.Handled = true; }
@@ -3976,6 +3979,9 @@ namespace Ferry
                 CancelArchiveOperation();
                 return;
             }
+
+            if (todoSaveTimer != null) todoSaveTimer.Stop();
+            SaveTodoNow();
 
             CaptureColumnSettings(); if (WindowState == WindowState.Normal) { settings.WindowWidth = Width; settings.WindowHeight = Height; settings.WindowLeft = Left; settings.WindowTop = Top; } settings.WindowMaximized = WindowState == WindowState.Maximized; settings.SidebarWidth = mainGrid.ColumnDefinitions[0].ActualWidth > 0 ? mainGrid.ColumnDefinitions[0].ActualWidth : settings.SidebarWidth; settings.SearchMode = Convert.ToString(searchModeBox.SelectedItem); try { SettingsStore.Save(settings); } catch { }
             foreach (TabViewContext ctx in contexts.Values) { StopSearchDrain(ctx); CancelGridThumbnailLoad(ctx); ctx.State.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } }
