@@ -280,10 +280,16 @@ namespace Ferry
         {
             if (todoEntries != null) return;
 
-            List<TodoEntry> loaded = TodoStore.Load();
+            List<TodoEntry> loaded = settings == null || settings.TodoEntries == null
+                ? new List<TodoEntry>()
+                : settings.TodoEntries;
             todoEntries = new ObservableCollection<TodoEntry>();
             for (int i = 0; i < loaded.Count; i++)
-                if (loaded[i] != null) todoEntries.Add(loaded[i]);
+            {
+                TodoEntry source = loaded[i];
+                if (source != null)
+                    todoEntries.Add(new TodoEntry { Text = source.Text, Memo = source.Memo });
+            }
 
             if (todoEntries.Count == 0)
                 todoEntries.Add(new TodoEntry());
@@ -320,9 +326,41 @@ namespace Ferry
 
         private void SaveTodoNow()
         {
-            if (todoEntries == null) return;
-            try { TodoStore.Save(todoEntries); }
+            if (todoEntries == null || settings == null) return;
+            try
+            {
+                List<TodoEntry> snapshot = new List<TodoEntry>();
+                for (int i = 0; i < todoEntries.Count; i++)
+                {
+                    TodoEntry source = todoEntries[i];
+                    if (source == null) continue;
+                    snapshot.Add(new TodoEntry { Text = source.Text, Memo = source.Memo });
+                }
+                settings.TodoEntries = snapshot;
+                SettingsStore.Save(settings);
+            }
             catch (Exception ex) { Logger.Write("To-Do save failed: " + ex.Message); }
+        }
+
+        private void ReloadTodoEntriesFromSettings()
+        {
+            if (todoEntries == null || settings == null) return;
+
+            todoEntries.Clear();
+            List<TodoEntry> sourceEntries = settings.TodoEntries ?? new List<TodoEntry>();
+            for (int i = 0; i < sourceEntries.Count; i++)
+            {
+                TodoEntry source = sourceEntries[i];
+                if (source != null)
+                    todoEntries.Add(new TodoEntry { Text = source.Text, Memo = source.Memo });
+            }
+
+            if (todoEntries.Count == 0)
+                todoEntries.Add(new TodoEntry());
+
+            RenumberTodoEntries();
+            RebuildTodoRows();
+            UpdateStatus();
         }
 
         private void TodoLeftPreviewKeyDown(object sender, KeyEventArgs e)
