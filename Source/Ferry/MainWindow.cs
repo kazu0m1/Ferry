@@ -3918,7 +3918,8 @@ namespace Ferry
                 if (key == Key.Escape)
                 {
                     CancelInlineRename(renameItem);
-                    if (renameContext != null) { if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) renameContext.GridView.Focus(); else renameContext.ListView.Focus(); }
+                    if (renameContext != null)
+                        RestoreKeyboardFocusAfterInlineRename(renameContext, renameItem);
                     e.Handled = true; return;
                 }
             }
