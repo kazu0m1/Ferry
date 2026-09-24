@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - feature/v1.2.0-todo-prototype
-    paths:
-      - .github/workflows/build-v1.2.0-todo-prototype-exe.yml
 
 permissions:
   contents: read
