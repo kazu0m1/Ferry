@@ -1,0 +1,29 @@
+name: Build Ferry v1.2.0 To-Do prototype EXE
+
+on:
+  push:
+    branches:
+      - feature/v1.2.0-todo-prototype
+    paths:
+      - .github/workflows/build-v1.2.0-todo-prototype-exe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout prototype
+        uses: actions/checkout@v4
+
+      - name: Build Ferry.exe
+        shell: cmd
+        run: Build.cmd
+
+      - name: Upload Ferry.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ferry-v1.2.0-todo-prototype-exe
+          path: Portable/Ferry.exe
+          if-no-files-found: error
