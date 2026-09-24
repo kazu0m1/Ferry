@@ -37,7 +37,6 @@ namespace Ferry
 
             if (settings == null) settings = new AppSettings();
             Normalize(settings);
-            MigrateLegacyTodo(settings);
             return settings;
         }
 
@@ -97,26 +96,6 @@ namespace Ferry
             if (s.RubberBandAutoScrollSpeed <= 0) s.RubberBandAutoScrollSpeed = 100;
             else if (s.RubberBandAutoScrollSpeed < 30) s.RubberBandAutoScrollSpeed = 30;
             else if (s.RubberBandAutoScrollSpeed > 300) s.RubberBandAutoScrollSpeed = 300;
-        }
-
-        private static void MigrateLegacyTodo(AppSettings settings)
-        {
-            List<TodoEntry> legacy;
-            if (!TodoStore.TryLoadLegacy(out legacy)) return;
-
-            if ((settings.TodoEntries == null || settings.TodoEntries.Count == 0) && legacy != null && legacy.Count > 0)
-                settings.TodoEntries = legacy;
-
-            // Delete the old file only after the combined settings file has been written.
-            // If writing fails, leave todo.json untouched so no user content is lost.
-            try
-            {
-                Save(settings);
-                TodoStore.DeleteLegacy();
-            }
-            catch
-            {
-            }
         }
 
         private static string PrettyJson(string json)
