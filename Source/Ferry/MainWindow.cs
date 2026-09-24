@@ -3826,7 +3826,27 @@ namespace Ferry
 
         private void ShowSettings(object sender, RoutedEventArgs e)
         {
-            CaptureColumnSettings(); SettingsWindow window = new SettingsWindow(this, settings); if (window.ShowDialog() == true && window.Result != null) { settings = window.Result; Logger.Configure(settings.DebugLogging); currentViewMode = settings.DefaultView; ApplySidebarLayoutFromSettings(); searchModeBox.SelectedItem = settings.SearchMode; BuildSidebar(); foreach (TabViewContext ctx in contexts.Values) { BuildListColumns(ctx, ctx.State.IsSearching); ShowCurrentView(ctx); if (!ctx.State.IsSearching) LoadFolder(ctx.State, ctx.State.CurrentPath, false); } SettingsStore.Save(settings); }
+            CaptureColumnSettings();
+            SaveTodoNow();
+
+            SettingsWindow window = new SettingsWindow(this, settings);
+            if (window.ShowDialog() == true && window.Result != null)
+            {
+                settings = window.Result;
+                ReloadTodoEntriesFromSettings();
+                Logger.Configure(settings.DebugLogging);
+                currentViewMode = settings.DefaultView;
+                ApplySidebarLayoutFromSettings();
+                searchModeBox.SelectedItem = settings.SearchMode;
+                BuildSidebar();
+                foreach (TabViewContext ctx in contexts.Values)
+                {
+                    BuildListColumns(ctx, ctx.State.IsSearching);
+                    ShowCurrentView(ctx);
+                    if (!ctx.State.IsSearching) LoadFolder(ctx.State, ctx.State.CurrentPath, false);
+                }
+                SettingsStore.Save(settings);
+            }
         }
 
         private void CloseTab(TabState state)
