@@ -33,6 +33,12 @@ namespace Ferry
 
             if (todoTabItem != null && tabs != null && tabs.Items.Contains(todoTabItem))
             {
+                int currentIndex = tabs.Items.IndexOf(todoTabItem);
+                if (currentIndex > 0)
+                {
+                    tabs.Items.Remove(todoTabItem);
+                    tabs.Items.Insert(0, todoTabItem);
+                }
                 tabs.SelectedItem = todoTabItem;
                 FocusFirstTodoEditorIfNeeded();
                 return;
@@ -44,7 +50,7 @@ namespace Ferry
                 Header = BuildTodoTabHeader()
             };
 
-            tabs.Items.Add(todoTabItem);
+            tabs.Items.Insert(0, todoTabItem);
             tabs.SelectedItem = todoTabItem;
             FocusFirstTodoEditorIfNeeded();
         }
@@ -233,8 +239,8 @@ namespace Ferry
             {
                 DataContext = entry,
                 Width = 42,
-                Margin = new Thickness(6, 7, 0, 5),
-                TextAlignment = TextAlignment.Right,
+                Margin = new Thickness(10, 7, 0, 5),
+                TextAlignment = TextAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
                 ToolTip = "Right-click the number to delete this item"
             };
