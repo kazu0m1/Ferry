@@ -3322,6 +3322,42 @@ namespace Ferry
             catch (Exception ex) { KeepInlineRenameAfterError(state, item, editor, ex.Message); return false; }
         }
 
+        private void RestoreKeyboardFocusAfterInlineRename(TabViewContext ctx, FileItem item)
+        {
+            if (ctx == null || item == null || ctx.State == null || !ctx.State.Items.Contains(item)) return;
+
+            Selector selector = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)
+                ? (Selector)ctx.GridView
+                : (Selector)ctx.ListView;
+
+            ctx.SelectionAnchorItem = item;
+            ctx.KeyboardNavigationItem = item;
+            SetSingleSelection(selector, item);
+            SetExtendedSelectionAnchorOnly(selector, item);
+
+            // Enter closes the TextBox by changing IsRenaming. WPF may not have swapped the
+            // editor back to the normal item visual until the next layout pass, so restore
+            // keyboard focus to the actual ListBoxItem after that visual transition.
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate
+            {
+                if (ctx != ActiveContext || !ctx.State.Items.Contains(item)) return;
+
+                ListBox listBox = selector as ListBox;
+                if (listBox != null)
+                {
+                    listBox.ScrollIntoView(item);
+                    listBox.UpdateLayout();
+                }
+
+                SetSingleSelection(selector, item);
+                SetExtendedSelectionAnchorOnly(selector, item);
+                ctx.SelectionAnchorItem = item;
+                ctx.KeyboardNavigationItem = item;
+                FocusSelectorItem(selector, item);
+                UpdateStatus();
+            }));
+        }
+
         private void KeepInlineRenameAfterError(TabState state, FileItem item, TextBox editor, string message)
         {
             MessageBox.Show(this, message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -3875,7 +3911,8 @@ namespace Ferry
                 if (key == Key.Enter)
                 {
                     bool committed = renameContext != null && CommitInlineRename(renameContext.State, renameItem, inlineEditor);
-                    if (committed && renameContext != null) { if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) renameContext.GridView.Focus(); else renameContext.ListView.Focus(); }
+                    if (committed && renameContext != null)
+                        RestoreKeyboardFocusAfterInlineRename(renameContext, renameItem);
                     e.Handled = true; return;
                 }
                 if (key == Key.Escape)
