@@ -238,7 +238,7 @@ namespace Ferry
             TextBlock number = new TextBlock
             {
                 DataContext = entry,
-                Width = 42,
+                Width = 28,
                 Margin = new Thickness(10, 7, 0, 5),
                 TextAlignment = TextAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
@@ -261,7 +261,7 @@ namespace Ferry
                 VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 BorderThickness = new Thickness(0),
-                Padding = new Thickness(8, 6, 8, 6),
+                Padding = new Thickness(4, 6, 8, 6),
                 Background = Brushes.Transparent,
                 VerticalContentAlignment = VerticalAlignment.Top,
                 VerticalAlignment = VerticalAlignment.Stretch,
@@ -405,11 +405,21 @@ namespace Ferry
 
             if (e.Key == Key.Back && Keyboard.Modifiers == ModifierKeys.None &&
                 editor.SelectionLength == 0 && editor.CaretIndex == 0 &&
-                string.IsNullOrEmpty(entry.Text) && string.IsNullOrEmpty(entry.Memo) &&
-                todoEntries.Count > 1)
+                string.IsNullOrEmpty(entry.Text))
             {
                 int index = todoEntries.IndexOf(entry);
                 if (index < 0) return;
+
+                // The left To-Do text is the authority for whether a numbered row still exists.
+                // If it is empty, Backspace removes the whole row even when Memo contains text.
+                if (todoEntries.Count == 1)
+                {
+                    entry.Memo = string.Empty;
+                    ScheduleTodoSave();
+                    e.Handled = true;
+                    FocusTodoEditor(entry, TodoLeftEditorTag, 0);
+                    return;
+                }
 
                 TodoEntry previous = index > 0 ? todoEntries[index - 1] : todoEntries[1];
                 todoEntries.RemoveAt(index);
