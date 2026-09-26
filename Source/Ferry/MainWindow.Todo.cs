@@ -261,7 +261,7 @@ namespace Ferry
                 VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 BorderThickness = new Thickness(0),
-                Padding = new Thickness(4, 6, 8, 6),
+                Padding = new Thickness(2, 6, 8, 6),
                 Background = Brushes.Transparent,
                 VerticalContentAlignment = VerticalAlignment.Top,
                 VerticalAlignment = VerticalAlignment.Stretch,
@@ -273,6 +273,7 @@ namespace Ferry
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
             editor.TextChanged += TodoEditorTextChanged;
+            editor.PreviewKeyDown += TodoEditorNavigationPreviewKeyDown;
             return editor;
         }
 
@@ -361,6 +362,107 @@ namespace Ferry
             RenumberTodoEntries();
             RebuildTodoRows();
             UpdateStatus();
+        }
+
+        private void TodoEditorNavigationPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers != ModifierKeys.None || todoEntries == null) return;
+
+            TextBox editor = sender as TextBox;
+            TodoEntry entry = editor == null ? null : editor.DataContext as TodoEntry;
+            if (editor == null || entry == null || editor.SelectionLength != 0) return;
+
+            int rowIndex = todoEntries.IndexOf(entry);
+            if (rowIndex < 0) return;
+
+            string tag = Convert.ToString(editor.Tag);
+            bool isMemo = string.Equals(tag, TodoMemoEditorTag, StringComparison.Ordinal);
+            string currentTag = isMemo ? TodoMemoEditorTag : TodoLeftEditorTag;
+
+            if (e.Key == Key.Left)
+            {
+                // Keep ordinary caret movement inside the text. Crossing to the other column
+                // happens only when the caret is already at the absolute left edge.
+                if (!isMemo || editor.CaretIndex > 0) return;
+                e.Handled = true;
+                FocusTodoEditor(entry, TodoLeftEditorTag, entry.Text.Length);
+                return;
+            }
+
+            if (e.Key == Key.Right)
+            {
+                // Likewise, leave the To-Do cell only from its absolute right edge.
+                if (isMemo || editor.CaretIndex < editor.Text.Length) return;
+                e.Handled = true;
+                FocusTodoEditor(entry, TodoMemoEditorTag, 0);
+                return;
+            }
+
+            if (e.Key != Key.Up && e.Key != Key.Down) return;
+
+            int lineIndex = editor.GetLineIndexFromCharacterIndex(editor.CaretIndex);
+            if (lineIndex < 0) lineIndex = 0;
+            int lineCount = Math.Max(1, editor.LineCount);
+
+            // Multiline items still behave like normal text editors. Up/Down leaves the row
+            // only from the first/last visual line respectively.
+            if (e.Key == Key.Up && lineIndex > 0) return;
+            if (e.Key == Key.Down && lineIndex < lineCount - 1) return;
+
+            int targetRow = e.Key == Key.Up ? rowIndex - 1 : rowIndex + 1;
+            if (targetRow < 0 || targetRow >= todoEntries.Count) return;
+
+            int currentLineStart = editor.GetCharacterIndexFromLineIndex(lineIndex);
+            if (currentLineStart < 0) currentLineStart = 0;
+            int column = Math.Max(0, editor.CaretIndex - currentLineStart);
+
+            TodoEntry target = todoEntries[targetRow];
+            e.Handled = true;
+            FocusTodoEditorAtLineBoundary(
+                target,
+                currentTag,
+                e.Key == Key.Up,
+                column);
+        }
+
+        private void FocusTodoEditorAtLineBoundary(TodoEntry entry, string tag, bool lastLine, int column)
+        {
+            if (entry == null) return;
+
+            TextBox editor = null;
+            if (string.Equals(tag, TodoMemoEditorTag, StringComparison.Ordinal))
+                todoMemoEditors.TryGetValue(entry, out editor);
+            else
+                todoLeftEditors.TryGetValue(entry, out editor);
+
+            if (editor == null) return;
+
+            editor.Focus();
+            editor.BringIntoView();
+            editor.UpdateLayout();
+
+            int lineCount = Math.Max(1, editor.LineCount);
+            int lineIndex = lastLine ? lineCount - 1 : 0;
+            int lineStart = editor.GetCharacterIndexFromLineIndex(lineIndex);
+            if (lineStart < 0) lineStart = 0;
+
+            int lineEnd;
+            if (lineIndex + 1 < lineCount)
+            {
+                lineEnd = editor.GetCharacterIndexFromLineIndex(lineIndex + 1);
+                if (lineEnd < 0) lineEnd = editor.Text.Length;
+            }
+            else
+            {
+                lineEnd = editor.Text.Length;
+            }
+
+            // Do not place the caret on CR/LF characters at the end of an explicit line.
+            while (lineEnd > lineStart &&
+                   (editor.Text[lineEnd - 1] == '\r' || editor.Text[lineEnd - 1] == '\n'))
+                lineEnd--;
+
+            editor.CaretIndex = Math.Max(lineStart, Math.Min(lineStart + column, lineEnd));
         }
 
         private void TodoLeftPreviewKeyDown(object sender, KeyEventArgs e)
