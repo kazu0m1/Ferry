@@ -238,6 +238,7 @@ namespace Ferry
             TextBlock number = new TextBlock
             {
                 DataContext = entry,
+                Width = 28,
                 Margin = new Thickness(10, 7, 0, 5),
                 TextAlignment = TextAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
