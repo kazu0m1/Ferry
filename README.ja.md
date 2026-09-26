@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.1.7  
+> **現在のリリース:** v1.2.0  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.1.7 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.7-win-portable.zip)**
+**[Ferry v1.2.0 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.0-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -48,6 +48,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 - **高速な再帰ファイル名検索** — 結果を逐次表示
 - **強力な一括リネーム** — 置換・連番・開始番号指定・ライブプレビュー
 - **タブ** — 必要十分なタブブラウジング。ドラッグで並べ替え可能
+- **To-Do** — タスク、コマンド、作業メモを番号付きのTo-Do / Memoとしてすぐ書けるシンプルなスクラッチパッド
 - **Windowsとの自然な統合** — ごみ箱、プロパティ、詳細Shellメニュー、ショートカット、D&D
 - **大容量転送中も応答性を維持** — Windows ShellのCopy/Move中もFerryを最小化・復元でき、タブ切替やフォルダー移動を継続可能。Ferry同士のD&Dでも送受信側の両方を操作可能
 - **リムーバブルドライブ対応** — Ferry起動後に接続したドライブを自動反映し、安全な取り外し時は対象タブと監視を解放してから取り外し
@@ -63,11 +64,33 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 派手な機能ではありませんが、余計なUIを増やさず、日常のファイル操作を直接的で予測しやすくするというFerryの考え方を表す機能のひとつです。
 
+### To-Do — ファイル操作の横に置いておける小さな備忘録
+
+Sidebarの **To-Do** は、期限・優先度・タグ・チェックボックスを持たない、シンプルな番号付きプレーンテキストメモです。
+
+左側のTo-Doと右側のMemoは同じ番号で対応し、左右の行高も常に揃うため、対応する内容を横一直線に追えます。
+
+- To-Do側で **Enter** — 次の番号を作成
+- **Shift+Enter** — 同じ番号の中で改行
+- **矢印キー** — 複数行テキスト内の通常操作を保ちつつ、前後行やTo-Do / Memo間を移動
+- 空のTo-Do先頭で **Backspace** — その番号の行を削除
+- 内容はFerryの他の設定と一緒に `config\settings.json` へ自動保存
+
+普通の「やることリスト」として使えます。
+
+![Ferry To-Do やることリスト例](docs/todo-sample-ja-task-list.png)
+
+一方で、To-Doはタスク管理に限定していません。たとえば、よく使うBash / PowerShellコマンドを左側へ置き、右側のMemoに「何をするコマンドなのか」を書き留めておくこともできます。
+
+![Ferry To-Do コマンドメモ例](docs/todo-sample-ja-command-notes.png)
+
+To-Doを書き、必要ならMemoを書く。不要になれば行を消す。それだけです。Ferryはこの機能をプロジェクト管理へ広げず、ファイル操作中にすぐ書いて参照できる小さな作業メモとして保ちます。
+
 ## 起動
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.1.7-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.2.0-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -82,7 +105,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.1.7の初期設定
+## v1.2.0の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
@@ -277,14 +300,14 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.1.7-win-portable.zip
+dist\Ferry-v1.2.0-win-portable.zip
 ```
 
 です。
 
 ## 仕様書
 
-現行v1.1の差分仕様は`Ferry_SPEC_v1.1.md`、歴史的なv1.0/v1.0.2ベースラインは`Ferry_SPEC_v1.0.md`を参照してください。詳細な矩形選択仕様は`docs/RUBBER_BAND_SELECTION_SPEC_JA.md`に凍結しています。
+現行v1.2の差分仕様は`Ferry_SPEC_v1.2.md`、v1.1系は`Ferry_SPEC_v1.1.md`、歴史的なv1.0/v1.0.2ベースラインは`Ferry_SPEC_v1.0.md`を参照してください。詳細な矩形選択仕様は`docs/RUBBER_BAND_SELECTION_SPEC_JA.md`に凍結しています。
 
 ## License
 
