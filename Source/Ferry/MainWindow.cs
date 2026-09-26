@@ -3322,6 +3322,42 @@ namespace Ferry
             catch (Exception ex) { KeepInlineRenameAfterError(state, item, editor, ex.Message); return false; }
         }
 
+        private void RestoreKeyboardFocusAfterInlineRename(TabViewContext ctx, FileItem item)
+        {
+            if (ctx == null || item == null || ctx.State == null || !ctx.State.Items.Contains(item)) return;
+
+            Selector selector = string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)
+                ? (Selector)ctx.GridView
+                : (Selector)ctx.ListView;
+
+            ctx.SelectionAnchorItem = item;
+            ctx.KeyboardNavigationItem = item;
+            SetSingleSelection(selector, item);
+            SetExtendedSelectionAnchorOnly(selector, item);
+
+            // Enter closes the TextBox by changing IsRenaming. WPF may not have swapped the
+            // editor back to the normal item visual until the next layout pass, so restore
+            // keyboard focus to the actual ListBoxItem after that visual transition.
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate
+            {
+                if (ctx != ActiveContext || !ctx.State.Items.Contains(item)) return;
+
+                ListBox listBox = selector as ListBox;
+                if (listBox != null)
+                {
+                    listBox.ScrollIntoView(item);
+                    listBox.UpdateLayout();
+                }
+
+                SetSingleSelection(selector, item);
+                SetExtendedSelectionAnchorOnly(selector, item);
+                ctx.SelectionAnchorItem = item;
+                ctx.KeyboardNavigationItem = item;
+                FocusSelectorItem(selector, item);
+                UpdateStatus();
+            }));
+        }
+
         private void KeepInlineRenameAfterError(TabState state, FileItem item, TextBox editor, string message)
         {
             MessageBox.Show(this, message, "Ferry", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -3790,7 +3826,27 @@ namespace Ferry
 
         private void ShowSettings(object sender, RoutedEventArgs e)
         {
-            CaptureColumnSettings(); SettingsWindow window = new SettingsWindow(this, settings); if (window.ShowDialog() == true && window.Result != null) { settings = window.Result; Logger.Configure(settings.DebugLogging); currentViewMode = settings.DefaultView; ApplySidebarLayoutFromSettings(); searchModeBox.SelectedItem = settings.SearchMode; BuildSidebar(); foreach (TabViewContext ctx in contexts.Values) { BuildListColumns(ctx, ctx.State.IsSearching); ShowCurrentView(ctx); if (!ctx.State.IsSearching) LoadFolder(ctx.State, ctx.State.CurrentPath, false); } SettingsStore.Save(settings); }
+            CaptureColumnSettings();
+            SaveTodoNow();
+
+            SettingsWindow window = new SettingsWindow(this, settings);
+            if (window.ShowDialog() == true && window.Result != null)
+            {
+                settings = window.Result;
+                ReloadTodoEntriesFromSettings();
+                Logger.Configure(settings.DebugLogging);
+                currentViewMode = settings.DefaultView;
+                ApplySidebarLayoutFromSettings();
+                searchModeBox.SelectedItem = settings.SearchMode;
+                BuildSidebar();
+                foreach (TabViewContext ctx in contexts.Values)
+                {
+                    BuildListColumns(ctx, ctx.State.IsSearching);
+                    ShowCurrentView(ctx);
+                    if (!ctx.State.IsSearching) LoadFolder(ctx.State, ctx.State.CurrentPath, false);
+                }
+                SettingsStore.Save(settings);
+            }
         }
 
         private void CloseTab(TabState state)
@@ -3818,7 +3874,10 @@ namespace Ferry
             TabState state = ActiveState;
             if (state == null)
             {
-                if (statusText != null) { statusText.Text = "Ready"; statusText.ToolTip = "Ready"; }
+                string text = IsTodoTabActive && todoEntries != null
+                    ? "To-Do   •   " + todoEntries.Count.ToString("N0") + " items"
+                    : "Ready";
+                if (statusText != null) { statusText.Text = text; statusText.ToolTip = text; }
                 return;
             }
             List<string> selected = GetSelectedPaths(state);
@@ -3872,18 +3931,20 @@ namespace Ferry
                 if (key == Key.Enter)
                 {
                     bool committed = renameContext != null && CommitInlineRename(renameContext.State, renameItem, inlineEditor);
-                    if (committed && renameContext != null) { if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) renameContext.GridView.Focus(); else renameContext.ListView.Focus(); }
+                    if (committed && renameContext != null)
+                        RestoreKeyboardFocusAfterInlineRename(renameContext, renameItem);
                     e.Handled = true; return;
                 }
                 if (key == Key.Escape)
                 {
                     CancelInlineRename(renameItem);
-                    if (renameContext != null) { if (string.Equals(currentViewMode, "Grid", StringComparison.OrdinalIgnoreCase)) renameContext.GridView.Focus(); else renameContext.ListView.Focus(); }
+                    if (renameContext != null)
+                        RestoreKeyboardFocusAfterInlineRename(renameContext, renameItem);
                     e.Handled = true; return;
                 }
             }
             if (mods == ModifierKeys.Control && key == Key.T) { OpenNewTab(settings.HomePath, true); e.Handled = true; }
-            else if (mods == ModifierKeys.Control && key == Key.W) { if (state != null) CloseTab(state); e.Handled = true; }
+            else if (mods == ModifierKeys.Control && key == Key.W) { if (IsTodoTabActive) CloseTodoTab(); else if (state != null) CloseTab(state); e.Handled = true; }
             else if (mods == ModifierKeys.Control && key == Key.Tab) { CycleTab(1); e.Handled = true; }
             else if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.Tab) { CycleTab(-1); e.Handled = true; }
             else if (mods == ModifierKeys.Control && key == Key.L) { ToggleLocationBox(); e.Handled = true; }
@@ -3976,6 +4037,9 @@ namespace Ferry
                 CancelArchiveOperation();
                 return;
             }
+
+            if (todoSaveTimer != null) todoSaveTimer.Stop();
+            SaveTodoNow();
 
             CaptureColumnSettings(); if (WindowState == WindowState.Normal) { settings.WindowWidth = Width; settings.WindowHeight = Height; settings.WindowLeft = Left; settings.WindowTop = Top; } settings.WindowMaximized = WindowState == WindowState.Maximized; settings.SidebarWidth = mainGrid.ColumnDefinitions[0].ActualWidth > 0 ? mainGrid.ColumnDefinitions[0].ActualWidth : settings.SidebarWidth; settings.SearchMode = Convert.ToString(searchModeBox.SelectedItem); try { SettingsStore.Save(settings); } catch { }
             foreach (TabViewContext ctx in contexts.Values) { StopSearchDrain(ctx); CancelGridThumbnailLoad(ctx); ctx.State.CancelBackgroundWork(); if (ctx.Watcher != null) try { ctx.Watcher.Dispose(); } catch { } }

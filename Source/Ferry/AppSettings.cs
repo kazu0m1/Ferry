@@ -30,6 +30,7 @@ namespace Ferry
         public Dictionary<string, double> ColumnWidths { get; set; }
         public List<string> ColumnOrder { get; set; }
         public List<string> HiddenColumns { get; set; }
+        public List<TodoEntry> TodoEntries { get; set; }
         public bool DebugLogging { get; set; }
 
         public AppSettings()
@@ -62,6 +63,7 @@ namespace Ferry
             ColumnWidths["Created"] = 160;
             ColumnOrder = new List<string>(new string[] { "Name", "Items", "Type", "Size", "Modified", "Created" });
             HiddenColumns = new List<string>(new string[] { "Created" });
+            TodoEntries = new List<TodoEntry>();
             DebugLogging = false;
         }
     }

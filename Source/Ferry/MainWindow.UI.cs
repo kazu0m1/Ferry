@@ -203,6 +203,11 @@ namespace Ferry
                 return;
             }
             if (tabs.Items.Count < 2 || tabs.Items.IndexOf(tabDragSourceItem) < 0) return;
+            if (todoTabItem != null && object.ReferenceEquals(tabDragSourceItem, todoTabItem))
+            {
+                tabDragSourceItem = null;
+                return;
+            }
 
             Point current = e.GetPosition(tabs);
             if (Math.Abs(current.X - tabDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
@@ -255,10 +260,18 @@ namespace Ferry
             if (targetPoint.X >= Math.Max(1.0, target.ActualWidth) / 2.0) targetIndex++;
             if (sourceIndex < targetIndex) targetIndex--;
 
+            // To-Do is a pinned utility tab. Keep it at index 0 and never allow ordinary
+            // filesystem tabs to be dropped before it.
+            int minimumIndex = todoTabItem != null && tabs.Items.Contains(todoTabItem) &&
+                               !object.ReferenceEquals(source, todoTabItem)
+                ? 1
+                : 0;
+            targetIndex = Math.Max(minimumIndex, targetIndex);
+
             if (targetIndex != sourceIndex)
             {
                 tabs.Items.Remove(source);
-                targetIndex = Math.Max(0, Math.Min(targetIndex, tabs.Items.Count));
+                targetIndex = Math.Max(minimumIndex, Math.Min(targetIndex, tabs.Items.Count));
                 tabs.Items.Insert(targetIndex, source);
             }
 

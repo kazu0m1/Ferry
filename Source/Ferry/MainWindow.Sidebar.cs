@@ -102,6 +102,10 @@ namespace Ferry
             AddKnownFolder("Pictures", Environment.SpecialFolder.MyPictures);
             AddKnownFolder("Music", Environment.SpecialFolder.MyMusic);
             AddKnownFolder("Videos", Environment.SpecialFolder.MyVideos);
+            Button todo = SidebarButton("To-Do");
+            todo.ToolTip = "Open To-Do scratchpad";
+            todo.Click += delegate { OpenTodoTab(); };
+            sidebarPanel.Children.Add(todo);
 
             if (settings.PinnedFolders.Count > 0)
             {

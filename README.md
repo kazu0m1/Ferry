@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.1.7  
+> **Current release:** v1.2.0  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.1.7 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.1.7-win-portable.zip)**
+**[Download Ferry v1.2.0 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.0-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -48,6 +48,7 @@ Ferry is deliberately small in scope. It does not try to become an all-in-one du
 - **Fast recursive filename search** — progressive results, Windows Search when useful, direct traversal as fallback
 - **Capable bulk rename** — find/replace and numbering templates with live preview
 - **Tabs** — lightweight tabbed browsing with drag reordering
+- **To-Do scratchpad** — a numbered To-Do / Memo view for quick tasks, command notes, and other plain-text working notes
 - **Windows integration** — Recycle Bin, Shell context menu, Properties, shortcuts, thumbnails, drag & drop
 - **Responsive long transfers** — large Windows Shell Copy/Move operations keep Ferry responsive; Ferry-to-Ferry D&D releases both windows while the target transfer continues
 - **Removable-drive lifecycle** — drives connected after Ferry starts appear automatically, and safe eject releases affected tabs/watchers before removal
@@ -63,6 +64,28 @@ When a folder contains enough items to fill the entire view, there may be almost
 
 It is a small feature, but it reflects Ferry's goal: make everyday file operations feel direct and predictable without adding unnecessary UI.
 
+### To-Do — a small scratchpad beside your files
+
+The **To-Do** item in Ferry's Sidebar is deliberately simple: a numbered plain-text scratchpad with no due dates, priorities, tags, or checkboxes.
+
+Each To-Do entry on the left is paired with a Memo on the right using the same number. Both sides share the same row height, so related notes stay horizontally aligned.
+
+- **Enter** in To-Do creates the next numbered item
+- **Shift+Enter** inserts a line break inside the current To-Do item
+- **Arrow keys** move between rows and between To-Do / Memo while preserving normal multiline text navigation
+- **Backspace** at the start of an empty To-Do removes that numbered row
+- contents are saved automatically with Ferry's other portable settings in `config\settings.json`
+
+A simple task list works naturally:
+
+![Ferry To-Do task list example](docs/todo-sample-en-task-list.png)
+
+But To-Do does not have to be a task manager. A useful second pattern is to keep frequently used Bash or PowerShell commands on the left and write what each command does on the Memo side:
+
+![Ferry To-Do command notes example](docs/todo-sample-en-command-notes.png)
+
+Write a To-Do, add a Memo when useful, and delete the row when you are done. Ferry intentionally keeps this as a small working scratchpad rather than turning it into a project-management system.
+
 ## A Windows app, inspired by Nautilus
 
 Ferry is an independent Windows implementation. It is **not** a port, fork, or modified build of GNOME Files/Nautilus, and it contains no Nautilus source code or GNOME artwork.
@@ -73,7 +96,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.1.7-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.2.0-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -321,10 +344,10 @@ Ferry/
 │  └─ dev-history/               archived prototypes / RC validation records
 ├─ Build.cmd                     local build
 ├─ Make-PortableRelease.cmd      binary release ZIP builder
-├─ Ferry_SPEC_v1.1.md            current v1.1 release specification
+├─ Ferry_SPEC_v1.2.md            current v1.2 release specification
 ├─ Ferry_SPEC_v1.0.md            historical v1.0 baseline
 ├─ TEST_CHECKLIST.md             regression checklist
-├─ RELEASE_NOTES_v1.1.5.md       Current release notes
+├─ RELEASE_NOTES_v1.2.0.md       Current release notes
 ├─ CHANGELOG.md
 ├─ LICENSE.txt
 ├─ README.md
@@ -335,7 +358,7 @@ Ferry/
 
 Ferry intentionally does **not** implement its own Windows Shell, high-performance copy engine, terminal emulator, archive codec, full-text search engine, cloud client, or search database. When Windows already owns a capability well, Ferry tries to reuse it rather than duplicate it.
 
-See `Ferry_SPEC_v1.1.md` for the current v1.1 release delta and `Ferry_SPEC_v1.0.md` for the historical v1.0/v1.0.2 baseline.
+See `Ferry_SPEC_v1.2.md` for the current v1.2 release delta, `Ferry_SPEC_v1.1.md` for the v1.1 line, and `Ferry_SPEC_v1.0.md` for the historical v1.0/v1.0.2 baseline.
 
 ## License
 
