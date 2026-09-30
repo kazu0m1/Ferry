@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.2.0  
+> **現在のリリース:** v1.2.1  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.2.0 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.0-win-portable.zip)**
+**[Ferry v1.2.1 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.1-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -74,6 +74,8 @@ Sidebarの **To-Do** は、期限・優先度・タグ・チェックボック�
 - **Shift+Enter** — 同じ番号の中で改行
 - **矢印キー** — 複数行テキスト内の通常操作を保ちつつ、前後行やTo-Do / Memo間を移動
 - 空のTo-Do先頭で **Backspace** — その番号の行を削除
+- Settingsの **Open To-Do tab at startup** で起動時からTo-Doタブを開くか選択可能（初期値OFF）
+- 別タブからTo-Doへ戻ると、直前のセル・カーソル位置・選択範囲を復元
 - 内容はFerryの他の設定と一緒に `config\settings.json` へ自動保存
 
 普通の「やることリスト」として使えます。
@@ -90,7 +92,7 @@ To-Doを書き、必要ならMemoを書く。不要になれば行を消す。�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.2.0-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.2.1-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -105,9 +107,10 @@ To-Doを書き、必要ならMemoを書く。不要になれば行を消す。�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.2.0の初期設定
+## v1.2.1の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
+- Open To-Do tab at startup: **OFF**
 - Home: Windowsのユーザープロファイルフォルダー `%USERPROFILE%`
 - View: **List**
 - Search: **Contains**
@@ -300,7 +303,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.2.0-win-portable.zip
+dist\Ferry-v1.2.1-win-portable.zip
 ```
 
 です。
