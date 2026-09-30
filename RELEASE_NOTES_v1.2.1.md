@@ -9,6 +9,12 @@ Ferry v1.2.1 is a focused To-Do usability update.
 - Returning to the To-Do tab now restores the previous editor context: row, To-Do/Memo side, caret position, and text selection.
 - Fixed To-Do/Memo column-boundary drift when the vertical scrollbar appears in a smaller window. The header now follows the ScrollViewer viewport width so the 50/50 divider stays aligned with the item rows.
 
+## Validation
+
+- Startup preference ON/OFF: verified on Windows hardware.
+- To-Do caret / text-selection restoration after tab switching: verified on Windows hardware.
+- Windows GitHub Actions `Build.cmd`: PASS after the layout fix and v1.2.1 release metadata update.
+
 ## Notes
 
 - To-Do data remains stored in the existing portable `config\settings.json`.
