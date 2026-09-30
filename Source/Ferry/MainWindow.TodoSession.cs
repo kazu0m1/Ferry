@@ -17,6 +17,8 @@ namespace Ferry
         private string todoSessionEditorTag;
         private int todoSessionSelectionStart;
         private int todoSessionSelectionLength;
+        private ScrollViewer todoLayoutScrollViewer;
+        private Grid todoLayoutHeading;
 
         protected override void OnContentRendered(EventArgs e)
         {
@@ -100,7 +102,10 @@ namespace Ferry
 
         private void TodoSessionTabsSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.Source != tabs || !IsTodoTabActive || !todoSessionHasEditorState) return;
+            if (e.Source != tabs || !IsTodoTabActive) return;
+
+            EnsureTodoHeaderAlignment();
+            if (!todoSessionHasEditorState) return;
 
             // OpenTodoTab() historically schedules a first-row focus at Input priority. Restore
             // the user's previous editor/selection afterward so Sidebar activation and direct tab
@@ -109,6 +114,65 @@ namespace Ferry
             Dispatcher.BeginInvoke(
                 DispatcherPriority.ContextIdle,
                 new Action(RestoreTodoEditorState));
+        }
+
+        private void EnsureTodoHeaderAlignment()
+        {
+            if (todoTabItem == null) return;
+
+            Grid root = todoTabItem.Content as Grid;
+            if (root == null) return;
+
+            Grid heading = null;
+            ScrollViewer scroll = null;
+            for (int i = 0; i < root.Children.Count; i++)
+            {
+                UIElement child = root.Children[i];
+                if (Grid.GetRow(child) == 0 && heading == null)
+                    heading = child as Grid;
+                else if (Grid.GetRow(child) == 1 && scroll == null)
+                    scroll = child as ScrollViewer;
+            }
+
+            if (heading == null || scroll == null) return;
+
+            todoLayoutHeading = heading;
+            if (!object.ReferenceEquals(todoLayoutScrollViewer, scroll))
+            {
+                todoLayoutScrollViewer = scroll;
+                scroll.SizeChanged += TodoLayoutScrollViewerSizeChanged;
+                scroll.ScrollChanged += TodoLayoutScrollViewerScrollChanged;
+            }
+
+            SyncTodoHeadingToViewport();
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.Loaded,
+                new Action(SyncTodoHeadingToViewport));
+        }
+
+        private void TodoLayoutScrollViewerSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            SyncTodoHeadingToViewport();
+        }
+
+        private void TodoLayoutScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (Math.Abs(e.ViewportWidthChange) > 0.01)
+                SyncTodoHeadingToViewport();
+        }
+
+        private void SyncTodoHeadingToViewport()
+        {
+            if (todoLayoutHeading == null || todoLayoutScrollViewer == null) return;
+
+            double width = todoLayoutScrollViewer.ViewportWidth;
+            if (double.IsNaN(width) || double.IsInfinity(width) || width <= 0) return;
+
+            // The rows live inside the ScrollViewer viewport, which becomes narrower whenever
+            // the vertical scrollbar appears. Keep the header on that same viewport width so the
+            // 50/50 To-Do/Memo boundary remains a single straight line at every window size.
+            todoLayoutHeading.HorizontalAlignment = HorizontalAlignment.Left;
+            todoLayoutHeading.Width = width;
         }
 
         private void RestoreTodoEditorState()
