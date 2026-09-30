@@ -18,6 +18,7 @@ namespace Ferry
         private CheckBox sidebar;
         private TextBox sidebarWidth;
         private CheckBox sortFoldersFirst;
+        private CheckBox openTodoOnStartup;
         private Slider rubberBandAutoScrollSpeed;
         private TextBlock rubberBandAutoScrollSpeedValue;
         private ComboBox search;
@@ -52,6 +53,7 @@ namespace Ferry
             sidebar = new CheckBox { Content = "Show sidebar", IsChecked = settings.SidebarVisible, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(sidebar);
             sidebarWidth = new TextBox { Text = Math.Round(settings.SidebarWidth).ToString(CultureInfo.InvariantCulture), Width = 90, Padding = new Thickness(7, 5, 7, 5), HorizontalAlignment = HorizontalAlignment.Left }; panel.Children.Add(Labeled("Sidebar width (50–480)", sidebarWidth));
             sortFoldersFirst = new CheckBox { Content = "Sort folders before files", IsChecked = settings.SortFoldersFirst, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(sortFoldersFirst);
+            openTodoOnStartup = new CheckBox { Content = "Open To-Do tab at startup", IsChecked = settings.OpenTodoOnStartup, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(openTodoOnStartup);
 
             panel.Children.Add(Heading("Selection"));
             StackPanel autoScrollSpeedPanel = new StackPanel { Orientation = Orientation.Horizontal };
