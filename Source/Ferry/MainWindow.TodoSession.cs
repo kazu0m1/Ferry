@@ -27,10 +27,7 @@ namespace Ferry
             if (!todoSessionInitialized)
             {
                 todoSessionInitialized = true;
-
-                if (tabs != null)
-                    tabs.SelectionChanged += TodoSessionTabsSelectionChanged;
-
+                if (tabs != null) tabs.SelectionChanged += TodoSessionTabsSelectionChanged;
                 AddHandler(TextBoxBase.SelectionChangedEvent, new RoutedEventHandler(TodoSessionEditorSelectionChanged), true);
                 AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler(TodoSessionEditorGotKeyboardFocus), true);
                 AddHandler(Keyboard.LostKeyboardFocusEvent, new KeyboardFocusChangedEventHandler(TodoSessionEditorLostKeyboardFocus), true);
@@ -48,8 +45,7 @@ namespace Ferry
             if (settings == null || !settings.OpenTodoOnStartup || tabs == null) return;
             object selected = tabs.SelectedItem;
             OpenTodoTab();
-            if (selected != null && tabs.Items.Contains(selected))
-                tabs.SelectedItem = selected;
+            if (selected != null && tabs.Items.Contains(selected)) tabs.SelectedItem = selected;
         }
 
         private void TodoSessionEditorSelectionChanged(object sender, RoutedEventArgs e) { RememberTodoEditorState(e.OriginalSource as TextBox); }
