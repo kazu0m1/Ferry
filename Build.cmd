@@ -86,6 +86,7 @@ echo Building Ferry.exe...
  "Source\Ferry\MainWindow.PasteFeedback.cs" ^
  "Source\Ferry\MainWindow.Sidebar.cs" ^
  "Source\Ferry\MainWindow.Todo.cs" ^
+ "Source\Ferry\MainWindow.TodoSession.cs" ^
  "Source\Ferry\MainWindow.TabViewContext.cs" ^
  "Source\Ferry\MainWindow.UI.cs" ^
  "Source\Ferry\NaturalStringComparer.cs" ^

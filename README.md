@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.2.0  
+> **Current release:** v1.2.1  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.2.0 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.0-win-portable.zip)**
+**[Download Ferry v1.2.1 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.1-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -74,6 +74,8 @@ Each To-Do entry on the left is paired with a Memo on the right using the same n
 - **Shift+Enter** inserts a line break inside the current To-Do item
 - **Arrow keys** move between rows and between To-Do / Memo while preserving normal multiline text navigation
 - **Backspace** at the start of an empty To-Do removes that numbered row
+- **Open To-Do tab at startup** can be enabled in Settings; it is Off by default
+- returning to the To-Do tab restores the previous cell, caret, and text selection
 - contents are saved automatically with Ferry's other portable settings in `config\settings.json`
 
 A simple task list works naturally:
@@ -96,7 +98,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.2.0-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.2.1-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -114,6 +116,7 @@ No Visual Studio, NuGet, separate .NET SDK, or Internet connection is required f
 ## Factory defaults
 
 - Sort folders before files: **On** (can be disabled in Settings)
+- Open To-Do tab at startup: **Off**
 - Home: `%USERPROFILE%`
 - View: **List**
 - Search mode: **Contains**
@@ -330,7 +333,7 @@ Make-PortableRelease.cmd
 This creates:
 
 ```text
-dist\Ferry-v1.1.3-win-portable.zip
+dist\Ferry-v1.2.1-win-portable.zip
 ```
 
 ## Repository layout
@@ -347,7 +350,7 @@ Ferry/
 ├─ Ferry_SPEC_v1.2.md            current v1.2 release specification
 ├─ Ferry_SPEC_v1.0.md            historical v1.0 baseline
 ├─ TEST_CHECKLIST.md             regression checklist
-├─ RELEASE_NOTES_v1.2.0.md       Current release notes
+├─ RELEASE_NOTES_v1.2.1.md       Current release notes
 ├─ CHANGELOG.md
 ├─ LICENSE.txt
 ├─ README.md

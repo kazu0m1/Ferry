@@ -31,6 +31,7 @@ namespace Ferry
         public List<string> ColumnOrder { get; set; }
         public List<string> HiddenColumns { get; set; }
         public List<TodoEntry> TodoEntries { get; set; }
+        public bool OpenTodoOnStartup { get; set; }
         public bool DebugLogging { get; set; }
 
         public AppSettings()
@@ -64,6 +65,7 @@ namespace Ferry
             ColumnOrder = new List<string>(new string[] { "Name", "Items", "Type", "Size", "Modified", "Created" });
             HiddenColumns = new List<string>(new string[] { "Created" });
             TodoEntries = new List<TodoEntry>();
+            OpenTodoOnStartup = false;
             DebugLogging = false;
         }
     }

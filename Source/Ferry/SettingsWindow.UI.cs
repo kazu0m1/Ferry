@@ -18,6 +18,7 @@ namespace Ferry
         private CheckBox sidebar;
         private TextBox sidebarWidth;
         private CheckBox sortFoldersFirst;
+        private CheckBox openTodoOnStartup;
         private Slider rubberBandAutoScrollSpeed;
         private TextBlock rubberBandAutoScrollSpeedValue;
         private ComboBox search;
@@ -52,6 +53,7 @@ namespace Ferry
             sidebar = new CheckBox { Content = "Show sidebar", IsChecked = settings.SidebarVisible, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(sidebar);
             sidebarWidth = new TextBox { Text = Math.Round(settings.SidebarWidth).ToString(CultureInfo.InvariantCulture), Width = 90, Padding = new Thickness(7, 5, 7, 5), HorizontalAlignment = HorizontalAlignment.Left }; panel.Children.Add(Labeled("Sidebar width (50–480)", sidebarWidth));
             sortFoldersFirst = new CheckBox { Content = "Sort folders before files", IsChecked = settings.SortFoldersFirst, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(sortFoldersFirst);
+            openTodoOnStartup = new CheckBox { Content = "Open To-Do tab at startup", IsChecked = settings.OpenTodoOnStartup, Margin = new Thickness(0, 6, 0, 6) }; panel.Children.Add(openTodoOnStartup);
 
             panel.Children.Add(Heading("Selection"));
             StackPanel autoScrollSpeedPanel = new StackPanel { Orientation = Orientation.Horizontal };
@@ -93,7 +95,6 @@ namespace Ferry
             panel.Children.Add(Heading("External terminal")); terminal = new TextBox { Text = settings.TerminalCommand, Padding = new Thickness(7, 5, 7, 5) }; panel.Children.Add(Labeled("Command (blank = Auto)", terminal)); terminalArgs = new TextBox { Text = settings.TerminalArguments, Padding = new Thickness(7, 5, 7, 5) }; panel.Children.Add(Labeled("Arguments (custom terminal only)", terminalArgs)); panel.Children.Add(new TextBlock { Text = "Auto tries Windows Terminal, then Windows PowerShell, then Command Prompt.", Foreground = SystemColors.GrayTextBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) });
             panel.Children.Add(Heading("Troubleshooting")); debug = new CheckBox { Content = "Enable debug logging (OFF recommended)", IsChecked = settings.DebugLogging }; panel.Children.Add(debug);
 
-            // Keep About visually separate from the troubleshooting/logging controls above it.
             panel.Children.Add(new Border { Height = 12 });
             panel.Children.Add(Heading("About Ferry"));
             StackPanel about = new StackPanel { Margin = new Thickness(0, 0, 0, 6) };
