@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.1 — 2026-09-30
+
+- Added **Open To-Do tab at startup** to Settings, default Off.
+- Returning to the To-Do tab now restores the previous row/cell, caret position, and text selection.
+- Fixed To-Do/Memo header and row column-boundary drift when a vertical scrollbar appears in smaller windows.
+- Promoted release metadata and portable packaging to v1.2.1.
+
 ## v1.2.0 — 2026-09-26
 
 - Added the Sidebar **To-Do / Memo scratchpad** with numbered, vertically aligned paired rows.
@@ -236,48 +243,6 @@
 ### Fixed
 - Prevented scrollbar double-clicks from opening the currently selected item.
 - Prevented row-whitespace keyboard navigation from jumping to the top/bottom in large virtualized folders.
-
-## [1.1.0-rc10] - 2026-09-15
-
-### Changed
-- Breadcrumb専用horizontal scrollbarのthumbと左右end buttonのcorner radiusを2pxから**5px**へ拡大し、より楕円的で視認しやすい外観へ調整。
-- 10px高さ、常時表示end button、gray chrome、固定path-host高さなどRC9で確定したBreadcrumb scrollbar仕様は維持。
-- Toolbar 30×30 square button、Location Box、rubber-band / selection / autoscroll等の挙動は変更なし。
-
-## [1.1.0-rc9] - 2026-09-15
-
-### Changed
-- Breadcrumb専用horizontal scrollbarの高さを8pxから10pxへ拡大し、thumbを掴みやすくした。
-- Breadcrumb scrollbarのthumbと左右end buttonに2pxのcorner radiusを追加し、軽い角丸へ変更。
-- RC8で導入したend button常時表示とnormal / hover / pressedの濃度差は維持。
-- Toolbar 30×30 square button、Location Box、rubber-band / selection / autoscroll等の挙動は変更なし。
-
-## [1.1.0-rc8] - 2026-09-15
-
-### Changed
-- Breadcrumbの8px horizontal scrollbar両端にある左右移動buttonを、mouse hover前から常時見える専用chromeへ変更。
-- End buttonはscrollbar本体より一段濃いgrayを通常色とし、hover / pressedで段階的に濃くなる。
-- 8px scrollbar、Toolbar 30×30 square button、固定path-host高さなどRC7のlayoutは維持。
-
-## [1.1.0-rc7] - 2026-09-15
-
-### Changed
-- Breadcrumb用horizontal scrollbarを約8pxへ縮小し、List/Grid側の標準scrollbarには影響しないよう局所化。
-- Toolbarのicon button（Back / Forward / Up / Home / New tab / List / Grid / Settings / Search clear）を30×30の正方形へ統一。
-- Search mode / Search box / Location Boxも30px高へ揃え、RC6のScrollbar分でbuttonが縦に伸びる見た目を解消。
-- Breadcrumb / Location Box共通hostは30px + 8px scrollbar分の固定高さとし、長いpath表示と高さ固定を両立。
-
-## [1.1.0-rc6] - 2026-09-15
-
-### Fixed
-- Restored the Breadcrumb horizontal scrollbar while keeping the path row at a constant height.
-- Reserved one horizontal-scrollbar row in the fixed path-host height so long Breadcrumbs remain fully visible vertically.
-
-## [1.1.0-rc5] - 2026-09-15
-
-### Fixed
-- Fixed Breadcrumb content being clipped/hidden when the path host was fixed to the Location Box height.
-- Breadcrumb horizontal overflow no longer consumes vertical toolbar space; long paths keep the current-location side visible.
 
 ## v1.1.0 RC4 — 2026-09-15
 
