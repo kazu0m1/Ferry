@@ -95,7 +95,6 @@ namespace Ferry
             panel.Children.Add(Heading("External terminal")); terminal = new TextBox { Text = settings.TerminalCommand, Padding = new Thickness(7, 5, 7, 5) }; panel.Children.Add(Labeled("Command (blank = Auto)", terminal)); terminalArgs = new TextBox { Text = settings.TerminalArguments, Padding = new Thickness(7, 5, 7, 5) }; panel.Children.Add(Labeled("Arguments (custom terminal only)", terminalArgs)); panel.Children.Add(new TextBlock { Text = "Auto tries Windows Terminal, then Windows PowerShell, then Command Prompt.", Foreground = SystemColors.GrayTextBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) });
             panel.Children.Add(Heading("Troubleshooting")); debug = new CheckBox { Content = "Enable debug logging (OFF recommended)", IsChecked = settings.DebugLogging }; panel.Children.Add(debug);
 
-            // Keep About visually separate from the troubleshooting/logging controls above it.
             panel.Children.Add(new Border { Height = 12 });
             panel.Children.Add(Heading("About Ferry"));
             StackPanel about = new StackPanel { Margin = new Thickness(0, 0, 0, 6) };
