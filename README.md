@@ -19,15 +19,349 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
+> **Windows SmartScreen:** Ferry is currently unsigned, so Windows may show a warning the first time you run it. Choose **More info** and then **Run anyway** if you downloaded Ferry from this official repository.
+
+## Screenshots
+
+![Ferry main window](docs/screenshot-main.png)
+
+### More of Ferry
+
+| Grid / Location Box | Settings |
+|---|---|
+| ![Ferry Grid view and Location Box](docs/screenshot-grid-location.png) | ![Ferry Settings](docs/screenshot-settings.png) |
+
+| Rubber-band selection | Tabs |
+|---|---|
+| ![Ferry rubber-band selection](docs/screenshot-rubber-band.png) | ![Ferry tabs](docs/screenshot-tabs.png) |
+
+| Context menu | Empty folder |
+|---|---|
+| ![Ferry context menu](docs/screenshot-context-menu.png) | ![Ferry empty folder](docs/screenshot-empty-folder.png) |
+
+## Why Ferry?
+
+Ferry is deliberately small in scope. It does not try to become an all-in-one dual-pane power tool or replace `explorer.exe`. Instead, it focuses on everyday browsing and a few high-value workflows:
+
+- **Nautilus-inspired simplicity** — a familiar, uncluttered file-browsing model
+- **Folder item counts** — visible directly in Grid and List views
+- **Fast recursive filename search** — progressive results, Windows Search when useful, direct traversal as fallback
+- **Capable bulk rename** — find/replace and numbering templates with live preview
+- **Tabs** — lightweight tabbed browsing with drag reordering
+- **To-Do scratchpad** — a numbered To-Do / Memo view for quick tasks, command notes, and other plain-text working notes
+- **Windows integration** — Recycle Bin, Shell context menu, Properties, shortcuts, thumbnails, drag & drop
+- **Responsive long transfers** — large Windows Shell Copy/Move operations keep Ferry responsive; Ferry-to-Ferry D&D releases both windows while the target transfer continues
+- **Removable-drive lifecycle** — drives connected after Ferry starts appear automatically, and safe eject releases affected tabs/watchers before removal
+- **Portable-device recognition** — connected MTP/Android devices appear in the Sidebar and open in Windows Explorer for occasional file transfer
+- **Explorer-compatible drag & drop** — confirmed Move drops from Ferry to Windows Explorer complete as moves rather than leaving the source behind
+- **Paste result feedback** — after Copy/Cut → Paste, the destination items from the current operation remain selected so you can immediately see what was pasted
+- **ZIP workflow** — Ferry-owned ZIP create/extract with accurate progress, ETA, Cancel, conflict handling, and safety checks
+- **Portable settings** — small human-readable JSON, no private database, no telemetry
+
+### A small convenience that matters: `F12`
+
+When a folder contains enough items to fill the entire view, there may be almost no empty background left to right-click for **Open Terminal Here**. Ferry removes that little bit of friction: press **`F12`** at any time to open a terminal in the folder you are currently viewing, regardless of which item is selected or where the keyboard focus is.
+
+It is a small feature, but it reflects Ferry's goal: make everyday file operations feel direct and predictable without adding unnecessary UI.
+
 ### To-Do — a small scratchpad beside your files
 
 The **To-Do** item in Ferry's Sidebar is deliberately simple: a numbered plain-text scratchpad with no due dates, priorities, tags, or checkboxes.
 
-- **Open To-Do tab at startup** can be enabled in Settings; it is Off by default.
-- Returning to the To-Do tab restores the previous cell, caret, and text selection.
-- Contents are saved automatically with Ferry's other portable settings in `config\settings.json`.
+Each To-Do entry on the left is paired with a Memo on the right using the same number. Both sides share the same row height, so related notes stay horizontally aligned.
 
-See `RELEASE_NOTES_v1.2.1.md` for the current release changes and the repository history for earlier details.
+- **Enter** in To-Do creates the next numbered item
+- **Shift+Enter** inserts a line break inside the current To-Do item
+- **Arrow keys** move between rows and between To-Do / Memo while preserving normal multiline text navigation
+- **Backspace** at the start of an empty To-Do removes that numbered row
+- **Open To-Do tab at startup** can be enabled in Settings; it is Off by default
+- returning to the To-Do tab restores the previous cell, caret, and text selection
+- contents are saved automatically with Ferry's other portable settings in `config\settings.json`
+
+A simple task list works naturally:
+
+![Ferry To-Do task list example](docs/todo-sample-en-task-list.png)
+
+But To-Do does not have to be a task manager. A useful second pattern is to keep frequently used Bash or PowerShell commands on the left and write what each command does on the Memo side:
+
+![Ferry To-Do command notes example](docs/todo-sample-en-command-notes.png)
+
+Write a To-Do, add a Memo when useful, and delete the row when you are done. Ferry intentionally keeps this as a small working scratchpad rather than turning it into a project-management system.
+
+## A Windows app, inspired by Nautilus
+
+Ferry is an independent Windows implementation. It is **not** a port, fork, or modified build of GNOME Files/Nautilus, and it contains no Nautilus source code or GNOME artwork.
+
+GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliated with, endorsed by, or supported by the GNOME Foundation.
+
+## Quick start
+
+### Option A — prebuilt portable release
+
+1. Download `Ferry-v1.2.1-win-portable.zip` using the **Download** link above.
+2. Extract it to a folder of your choice.
+3. Run `Ferry.exe`.
+
+Ferry stores its settings in the local `config` folder beside the executable.
+
+### Option B — source / self-building package
+
+1. Download or clone the source repository.
+2. Run `Portable\Run-Ferry.cmd`.
+3. If `Ferry.exe` is not present, the launcher calls `Build.cmd` and builds it locally with the .NET Framework compiler included with Windows.
+4. Ferry starts in your Windows **Home profile folder** (`%USERPROFILE%`) using **List** view.
+
+No Visual Studio, NuGet, separate .NET SDK, or Internet connection is required for this build path.
+
+## Factory defaults
+
+- Sort folders before files: **On** (can be disabled in Settings)
+- Open To-Do tab at startup: **Off**
+- Home: `%USERPROFILE%`
+- View: **List**
+- Search mode: **Contains**
+- External terminal: **Auto**
+- UI language: **English**
+- Debug logging: **Off**
+- Telemetry / crash upload: **None**
+
+Terminal **Auto** mode tries, in order:
+
+1. Windows Terminal (`wt.exe`)
+2. Windows PowerShell (`powershell.exe`)
+3. Command Prompt (`cmd.exe`)
+
+A custom terminal command and arguments can be set in **Settings**.
+
+## Main features
+
+### Navigation and views
+
+- Sidebar with Home, standard user folders, pinned folders, drives, and Recycle Bin; folder entries provide Explorer-style right-click actions including **Open**
+- Connected MTP/portable devices are shown under **Portable Devices**; clicking one hands it off to Windows Explorer
+- Removable drives connected after startup appear automatically; safe eject moves every affected Ferry tab to Home/a local fallback before Windows removes the drive
+- Pinned folders can be reordered by drag & drop; the order persists across restarts
+- Sidebar width is configurable from 50–480; double-click the divider to auto-fit visible labels
+- Breadcrumb navigation; `Ctrl+L` opens the Location Box, `Esc` or `Ctrl+L` again returns to Breadcrumb
+- Back / Forward / Up / Home
+- **Back restores context** — when returning from a child folder to its parent, Ferry reselects that folder and aligns it to the top of List view
+- Tabs (`Ctrl+T`, `Ctrl+W`, `Ctrl+Tab`, `Ctrl+Shift+Tab`); open tabs can be reordered by dragging
+- List and Grid views — List uses lightweight Windows Shell type icons; Grid loads content thumbnails
+- Global List columns and sort configuration
+- Natural filename sorting (`file2` before `file10`)
+- **Sort folders before files** enabled by default
+- Visible ascending / descending sort indicator
+- Native multi-selection: `Ctrl+Click`, `Shift+Click`, and `Ctrl+A`
+- Multi-selection actions: `Enter` opens all selected items; dragging any already-selected item preserves and drags the full selected set
+- New items detected from outside Ferry stay at the bottom until the user explicitly refreshes or sorts; metadata such as an active download's size can continue updating in place
+- `F12` opens a terminal in the current Ferry folder regardless of item selection
+- After Copy/Cut → Paste, the top-level destination items from the current operation remain selected; a later Paste replaces the previous result selection
+
+- Explorer-style rubber-band/marquee selection in List and Grid views, including Ctrl / Shift / Ctrl+Shift semantics and edge autoscroll
+- Visible Selection Anchor indicator for predictable Shift-range behavior
+- Rubber-band autoscroll speed is configurable from 30–300 in Settings (default 100)
+
+### Search
+
+Ferry search is intentionally a **file-browser filename search**, not an Everything replacement.
+
+- current folder + descendants
+- files and folders
+- progressive asynchronous results
+- **Contains** and **StartsWith** modes
+- full-width / half-width differences are ignored (`カタカナ` matches `ｶﾀｶﾅ`; kana type remains distinct)
+- `*` and `?` wildcards
+- multiple terms use AND behavior in Contains mode
+- hidden items included only when **Show hidden items** is enabled
+- junction/symbolic-link targets are not recursively followed
+- Windows Search Index is used when useful, with direct traversal as fallback
+- no Ferry-owned search index or search database
+
+### Rename
+
+**Single selection + `F2`** edits the complete filename. Ferry initially selects only the stem, so the extension remains visible and intentionally editable.
+
+**Multiple selection + `F2`** opens the integrated bulk-renaming dialog with:
+
+- Find & Replace
+- numbering templates
+- configurable start number
+- live Current → New preview
+- deterministic order based on the current visible Ferry sort
+- collision-safe two-phase rename
+- extension preservation for bulk rename
+
+Supported numbering tokens include:
+
+```text
+[1, 2, 3]
+[01, 02, 03]
+[001, 002, 003]
+```
+
+### Recycle Bin
+
+Recycle Bin opens **inside Ferry** as a virtual view over the current Windows user's Recycle Bin.
+
+- Restore
+- Delete Permanently
+- Open Original Location
+- Empty Recycle Bin from the Sidebar context menu
+
+Windows remains the authority for Recycle Bin storage and operations.
+
+### File operations and drag & drop
+
+Ferry delegates Windows-owned behavior where practical:
+
+Long Copy/Move operations are executed on a dedicated STA worker while Ferry's WPF Dispatcher remains responsive. Ferry-to-Ferry drops return promptly so both the sending and receiving Ferry windows remain usable during the transfer.
+
+- New Text Document from Ferry's lightweight background context menu
+- Copy / Cut / Paste
+- delete to Recycle Bin / permanent delete
+- drag & drop
+- conflict handling
+- Properties
+- Open With
+- Windows shortcuts
+- Shell detailed context menu, including multi-selection
+- icons and thumbnails
+
+Dragging files back into the same folder is treated as a no-op. Actionable destination folders are highlighted during drag-over.
+
+### ZIP
+
+The lightweight context menu provides:
+
+- **Compress to ZIP** for selected files/folders
+- **Extract Here** for a selected ZIP
+- **Extract to `<archive-name>\`**
+
+Ferry owns the ZIP workflow and uses .NET `System.IO.Compression` for ZIP container/Deflate support; it no longer launches the Windows archive command-line tool for ZIP work. Ferry does not implement a compression codec from scratch.
+
+Archive work is asynchronous. After **Start**, the setup window closes and progress moves to Ferry's bottom status area while the rest of Ferry stays usable. Ferry shows one neutral-gray overall progress bar plus processed/total data, file count, speed, ETA when available, and **Cancel**.
+
+Extraction conflict choices are intentionally direct:
+
+- folder: **MERGE / KEEP BOTH / SKIP / CANCEL**
+- file: **REPLACE / KEEP BOTH / SKIP / CANCEL**
+- KEEP BOTH generates collision-safe names such as `Folder(1)` and `photo(1).jpg`
+- after a folder MERGE, the first file conflict can optionally apply the selected file choice to all remaining file conflicts under that merged folder only
+
+Before/during extraction, Ferry blocks unsafe archive paths/names and protects final filenames by writing through temporary files. Resource-heavy ZIPs are warned rather than automatically rejected; the user can continue or cancel. The current warning defaults are expanded data over 20 GiB, more than 50,000 files, or compression ratio over 100×.
+
+## Open with Ferry in Explorer
+
+After Ferry has been built, run:
+
+```text
+ShellIntegration\Register.cmd
+```
+
+This adds **Open with Ferry** to the folder context menu for the current Windows user. Administrator rights are not required.
+
+Remove it with:
+
+```text
+ShellIntegration\Unregister.cmd
+```
+
+Ferry does not globally replace or hijack Explorer folder opening.
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+T` | New Home tab |
+| `Ctrl+W` | Close tab |
+| `Ctrl+Tab` | Next tab |
+| `Ctrl+Shift+Tab` | Previous tab |
+| `Alt+Left` | Back |
+| `Alt+Right` | Forward |
+| `Alt+Up` | Parent folder |
+| `Ctrl+L` | Direct path entry |
+| `Ctrl+F` | Search |
+| `F5` | Refresh and reapply the current sort |
+| `F12` | Open Terminal Here in the current folder |
+| `F2` | Rename / bulk rename |
+| `Ctrl+C/X/V` | Copy / Cut / Paste |
+| `Ctrl+A` | Select all |
+| `Delete` | Move to Recycle Bin |
+| `Shift+Delete` | Permanent delete |
+| `Enter` | Open all selected items |
+| `Alt+Enter` | Properties |
+| `Esc` | Exit search / clear selection |
+| `Shift+Right-click` | Windows detailed context menu |
+
+Normal typing while the file view has focus starts Ferry search rather than Explorer-style type-to-select.
+
+## Settings and privacy
+
+Settings are stored in `Portable\config\settings.json` in the source/self-building layout, or `config\settings.json` beside `Ferry.exe` in the binary portable package.
+
+If the settings file is missing or invalid, Ferry starts with safe factory defaults. Saving Settings creates/replaces a valid JSON file.
+
+Ferry has:
+
+- no telemetry
+- no automatic crash upload
+- no account system
+- no cloud sync subsystem
+- no Ferry-specific search database
+- no always-running service or tray process
+
+Debug logging is **Off** by default and bounded when enabled. Settings also includes an **About Ferry** section with the running version, project/author information, GitHub repository, and MIT license notice.
+
+## Build
+
+Ferry targets **.NET Framework 4.8 / WPF** and uses Windows/.NET Framework assemblies only. There are no NuGet dependencies.
+
+Run:
+
+```text
+Build.cmd
+```
+
+The script uses the .NET Framework C# compiler under `%WINDIR%\Microsoft.NET\Framework[64]\v4.0.30319\`.
+
+To create the binary-only GitHub Release asset on Windows:
+
+```text
+Make-PortableRelease.cmd
+```
+
+This creates:
+
+```text
+dist\Ferry-v1.2.1-win-portable.zip
+```
+
+## Repository layout
+
+```text
+Ferry/
+├─ Source/Ferry/                 C# / WPF source
+├─ Portable/                     launcher and local runtime folder
+├─ ShellIntegration/             optional Explorer context-menu registration
+├─ docs/                         publication / design documentation
+│  └─ dev-history/               archived prototypes / RC validation records
+├─ Build.cmd                     local build
+├─ Make-PortableRelease.cmd      binary release ZIP builder
+├─ Ferry_SPEC_v1.2.md            current v1.2 release specification
+├─ Ferry_SPEC_v1.0.md            historical v1.0 baseline
+├─ TEST_CHECKLIST.md             regression checklist
+├─ RELEASE_NOTES_v1.2.1.md       Current release notes
+├─ CHANGELOG.md
+├─ LICENSE.txt
+├─ README.md
+└─ README.ja.md
+```
+
+## Scope philosophy
+
+Ferry intentionally does **not** implement its own Windows Shell, high-performance copy engine, terminal emulator, archive codec, full-text search engine, cloud client, or search database. When Windows already owns a capability well, Ferry tries to reuse it rather than duplicate it.
+
+See `Ferry_SPEC_v1.2.md` for the current v1.2 release delta, `Ferry_SPEC_v1.1.md` for the v1.1 line, and `Ferry_SPEC_v1.0.md` for the historical v1.0/v1.0.2 baseline.
 
 ## License
 
