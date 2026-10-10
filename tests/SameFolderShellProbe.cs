@@ -39,6 +39,15 @@ class Probe
             Copy(folder,dir,0x0008|0x0010|0x0400|0x0200);
             foreach(string p in Directory.GetDirectories(dir)) Console.WriteLine("DIR "+Path.GetFileName(p));
             if(Directory.GetDirectories(dir).Length!=2) throw new Exception("same-folder dir duplicate not made");
+            // Explicitly map one source to a fresh target basename using FOF_MULTIDESTFILES.
+            string mappedFile=Path.Combine(dir,"sample (1).txt");
+            Copy(file,mappedFile,0x0001|0x0010|0x0400|0x0200);
+            if(!File.Exists(mappedFile) || File.ReadAllText(mappedFile)!="hello") throw new Exception("mapped file copy failed");
+            string mappedDir=Path.Combine(dir,"sample-dir (1)");
+            Copy(folder,mappedDir,0x0001|0x0010|0x0400|0x0200);
+            if(!File.Exists(Path.Combine(mappedDir,"child.txt"))) throw new Exception("mapped folder copy failed");
+            Console.WriteLine("MAPPED FILE "+Path.GetFileName(mappedFile));
+            Console.WriteLine("MAPPED DIR "+Path.GetFileName(mappedDir));
             Console.WriteLine("PASS");
         } finally { try { Directory.Delete(dir,true); } catch {} }
     }
