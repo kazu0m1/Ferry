@@ -55,6 +55,26 @@ namespace Ferry
             return ExecuteTransfer(FO_MOVE, paths, destination, FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR);
         }
 
+        // Copy each source to its explicitly selected new sibling name in ONE Shell operation.
+        // FOF_MULTIDESTFILES pairs the two multi-strings. RENAMEONCOLLISION protects against
+        // an unexpected concurrent creation at a planned target path instead of overwriting it.
+        public static bool CopyWithDestinations(IList<string> paths, IList<string> targetPaths)
+        {
+            if (paths == null || targetPaths == null || paths.Count == 0 || paths.Count != targetPaths.Count)
+                throw new ArgumentException("Invalid source/target list for duplicate copy.");
+            for (int i = 0; i < paths.Count; i++)
+            {
+                if (string.IsNullOrEmpty(paths[i]) || string.IsNullOrEmpty(targetPaths[i]))
+                    throw new ArgumentException("Duplicate copy paths cannot be empty.");
+                if (string.Equals(Path.GetFullPath(paths[i]).TrimEnd('\\'),
+                    Path.GetFullPath(targetPaths[i]).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("A duplicate must not overwrite its source.");
+            }
+            return ExecuteTransfer(FO_COPY, paths, null,
+                FOF_MULTIDESTFILES | FOF_RENAMEONCOLLISION | FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR,
+                targetPaths);
+        }
+
         public static void BeginCopy(IList<string> paths, string destination, Action<bool, Exception> completion)
         {
             BeginTransfer(FO_COPY, paths, destination, FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR, completion);
@@ -85,6 +105,12 @@ namespace Ferry
 
         private static bool ExecuteTransfer(uint operation, IList<string> paths, string destination, ushort flags)
         {
+            return ExecuteTransfer(operation, paths, destination, flags, null);
+        }
+
+        private static bool ExecuteTransfer(uint operation, IList<string> paths, string destination,
+            ushort flags, IList<string> targetPaths)
+        {
             if (paths == null || paths.Count == 0) return true;
 
             Application app = Application.Current;
@@ -97,7 +123,8 @@ namespace Ferry
 
                 try
                 {
-                    return Execute(operation, new List<string>(paths), destination, flags);
+                    return Execute(operation, new List<string>(paths), destination, flags,
+                        targetPaths == null ? null : new List<string>(targetPaths));
                 }
                 finally
                 {
@@ -114,6 +141,7 @@ namespace Ferry
                 paths,
                 destination,
                 flags,
+                targetPaths,
                 delegate(bool result, Exception error)
                 {
                     completed = result;
@@ -132,6 +160,12 @@ namespace Ferry
 
         private static void BeginTransfer(uint operation, IList<string> paths, string destination, ushort flags, Action<bool, Exception> completion)
         {
+            BeginTransfer(operation, paths, destination, flags, null, completion);
+        }
+
+        private static void BeginTransfer(uint operation, IList<string> paths, string destination,
+            ushort flags, IList<string> targetPaths, Action<bool, Exception> completion)
+        {
             if (paths == null || paths.Count == 0)
             {
                 if (completion != null) completion(true, null);
@@ -142,6 +176,7 @@ namespace Ferry
                 throw new IOException("Another file Copy/Move operation is already in progress.");
 
             List<string> stablePaths = new List<string>(paths);
+            List<string> stableTargets = targetPaths == null ? null : new List<string>(targetPaths);
             Application app = Application.Current;
             Dispatcher dispatcher = app == null ? null : app.Dispatcher;
 
@@ -152,7 +187,7 @@ namespace Ferry
 
                 try
                 {
-                    completed = Execute(operation, stablePaths, destination, flags);
+                    completed = Execute(operation, stablePaths, destination, flags, stableTargets);
                 }
                 catch (Exception ex)
                 {
@@ -188,11 +223,18 @@ namespace Ferry
 
         private static bool Execute(uint operation, IList<string> paths, string destination, ushort flags)
         {
+            return Execute(operation, paths, destination, flags, null);
+        }
+
+        private static bool Execute(uint operation, IList<string> paths, string destination,
+            ushort flags, IList<string> targetPaths)
+        {
             if (paths == null || paths.Count == 0) return true;
             SHFILEOPSTRUCT op = new SHFILEOPSTRUCT();
             op.wFunc = operation;
             op.pFrom = BuildMultiString(paths);
-            op.pTo = string.IsNullOrEmpty(destination) ? null : destination + '\0' + '\0';
+            op.pTo = targetPaths != null ? BuildMultiString(targetPaths) :
+                (string.IsNullOrEmpty(destination) ? null : destination + '\0' + '\0');
             op.fFlags = flags;
             int result = SHFileOperation(ref op);
             if (result != 0) throw new IOException("Windows file operation failed (0x" + result.ToString("X") + ").");
