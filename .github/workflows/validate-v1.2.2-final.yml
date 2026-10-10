@@ -1,0 +1,23 @@
+name: Validate v1.2.2 production transfer
+on:
+  push:
+    branches: [feature/v1.2.2-same-folder-duplicate]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: windows-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        shell: cmd
+        run: Build.cmd
+      - name: Compile tests
+        shell: cmd
+        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /target:exe /out:duplicates-tests.exe tests\SameFolderDuplicateTests.cs
+      - name: Execute regression with WPF dispatcher
+        shell: pwsh
+        run: |
+          & .\duplicates-tests.exe ".\Portable\Ferry.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Regression failed: $LASTEXITCODE" }
