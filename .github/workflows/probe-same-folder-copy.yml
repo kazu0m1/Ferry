@@ -1,0 +1,21 @@
+name: Probe same-folder Shell copy
+on:
+  push:
+    branches:
+      - feature/v1.2.2-same-folder-duplicate
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile probe
+        shell: cmd
+        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /target:exe /out:probe.exe tests\SameFolderShellProbe.cs
+      - name: Run probe
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath ".\probe.exe" -Wait -PassThru -NoNewWindow
+          if ($p.ExitCode -ne 0) { throw "Shell probe failed: $($p.ExitCode)" }
