@@ -15,10 +15,17 @@ class DuplicateTests
         if(!condition) throw new Exception("FAIL: "+description);
         Console.WriteLine("PASS: "+description);
     }
+    [STAThread]
     static void Main(string[] args)
     {
         string exe=Path.GetFullPath(args[0]);
         Assembly ferry=Assembly.LoadFrom(exe);
+        // Exercise the real Ferry UI-dispatcher transfer route, not merely its
+        // fallback for non-WPF callers: CopyWithDestinations must pump the frame
+        // until its dedicated Shell STA worker posts completion to this dispatcher.
+        Type appType=Type.GetType("System.Windows.Application, PresentationFramework",true);
+        object app=Activator.CreateInstance(appType);
+        Expect(app!=null,"WPF dispatcher initialized for transfer regression");
         Type planner=ferry.GetType("Ferry.SameFolderDuplicatePlan",true);
         Type shell=ferry.GetType("Ferry.ShellFileOperations",true);
         string root=Path.Combine(Path.GetTempPath(),"Ferry-Duplicate-Regression-"+Guid.NewGuid().ToString("N"));
