@@ -23,7 +23,9 @@ class DuplicateTests
         // Exercise the real Ferry UI-dispatcher transfer route, not merely its
         // fallback for non-WPF callers: CopyWithDestinations must pump the frame
         // until its dedicated Shell STA worker posts completion to this dispatcher.
-        Type appType=Type.GetType("System.Windows.Application, PresentationFramework",true);
+        string frameworkDirectory=Path.GetDirectoryName(typeof(object).Assembly.Location);
+        Assembly wpf=Assembly.LoadFrom(Path.Combine(frameworkDirectory,"WPF","PresentationFramework.dll"));
+        Type appType=wpf.GetType("System.Windows.Application",true);
         object app=Activator.CreateInstance(appType);
         Expect(app!=null,"WPF dispatcher initialized for transfer regression");
         Type planner=ferry.GetType("Ferry.SameFolderDuplicatePlan",true);
