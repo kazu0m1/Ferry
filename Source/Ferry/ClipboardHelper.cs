@@ -55,6 +55,12 @@ namespace Ferry
             return completed;
         }
 
+        // Expose the Clipboard's COPY/CUT intent without mutating it.
+        public static bool IsPasteCutOperation()
+        {
+            return IsCutOperation();
+        }
+
         public static bool WasUnoptimizedMovePerformed(IDataObject data)
         {
             try
