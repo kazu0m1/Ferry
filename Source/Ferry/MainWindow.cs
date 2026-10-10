@@ -3416,12 +3416,55 @@ namespace Ferry
             PasteFeedbackSession feedback = null;
             try
             {
-                InvalidateRenameUndo();
                 List<string> sourcePaths = ClipboardHelper.GetPasteSourcePaths();
+                // Duplicate only COPY items whose own parent is this destination.  CUT/Paste and
+                // ordinary copies to other folders continue using the existing Clipboard/Shell path.
+                List<string> sameFolderSources = new List<string>();
+                List<string> ordinarySources = new List<string>();
+                bool cut = ClipboardHelper.IsPasteCutOperation();
+                if (!cut)
+                {
+                    for (int i = 0; i < sourcePaths.Count; i++)
+                    {
+                        if (SameFolderDuplicatePlan.IsSameFolderSource(sourcePaths[i], state.CurrentPath))
+                            sameFolderSources.Add(sourcePaths[i]);
+                        else ordinarySources.Add(sourcePaths[i]);
+                    }
+                }
+
+                if (sameFolderSources.Count > 1)
+                {
+                    ChoiceDialogResult answer = ChoiceDialog.ShowYesNo(
+                        this, "Duplicate items",
+                        "Create duplicates of these " + sameFolderSources.Count +
+                        " items in the same folder?\n\nThe originals will remain unchanged.",
+                        ChoiceDialogResult.No);
+                    if (answer != ChoiceDialogResult.Yes) return;
+                }
+
+                // Prepare every fresh target before starting either part.  A declined prompt or
+                // planning error cannot create a partial duplicate or clear the existing selection.
+                List<string> duplicateTargets = sameFolderSources.Count == 0
+                    ? null : SameFolderDuplicatePlan.CreateTargets(state.CurrentPath, sameFolderSources);
+
+                InvalidateRenameUndo();
                 feedback = BeginPasteFeedback(state.CurrentPath, sourcePaths);
                 ctx.PasteFeedback = feedback;
 
-                bool completed = ClipboardHelper.Paste(state.CurrentPath);
+                bool completed;
+                if (sameFolderSources.Count == 0)
+                {
+                    completed = ClipboardHelper.Paste(state.CurrentPath);
+                }
+                else
+                {
+                    // A mixed clipboard is possible (e.g. from Explorer): ordinary external copies
+                    // keep their current conflict handling; only same-parent items get new names.
+                    completed = ordinarySources.Count == 0 ||
+                        ShellFileOperations.Copy(ordinarySources, state.CurrentPath);
+                    if (completed)
+                        completed = ShellFileOperations.CopyWithDestinations(sameFolderSources, duplicateTargets);
+                }
                 if (feedback != null)
                 {
                     feedback.OperationCompleted = completed;

@@ -99,6 +99,7 @@ echo Building Ferry.exe...
  "Source\Ferry\RecycleBinEntry.cs" ^
  "Source\Ferry\RecycleBinService.Operations.cs" ^
  "Source\Ferry\RecycleBinService.Enumeration.cs" ^
+ "Source\Ferry\SameFolderDuplicatePlan.cs" ^
  "Source\Ferry\SearchRequest.cs" ^
  "Source\Ferry\SearchService.cs" ^
  "Source\Ferry\SettingsWindow.UI.cs" ^

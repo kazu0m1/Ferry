@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.2 — 2026-10-11
+
+- Copy/Paste in the same folder now creates a numbered sibling (`name (1).ext`, `name (2).ext`, etc.) for files and directories without modifying originals.
+- Duplicating multiple same-folder items asks for Yes/No confirmation, defaulting to No. Single-item duplication proceeds without prompting.
+- Cut/Paste and ordinary cross-folder copy retain existing Windows Shell behavior. Batch duplicate operations continue to use Windows Shell, with explicit collision-safe target mapping.
+- Added Windows regression tests for mixed file/folder batches, repeated sources, existing numbered copies and source protection.
+
+## v1.2.1 — 2026-09-30
+
+- Added the optional To-Do tab at startup (default Off).
+- Preserved To-Do caret and selection across tab switches.
+- Fixed small-window To-Do/Memo column-divider alignment with the scrollbar viewport.
+
 ## v1.2.0 — 2026-09-26
 
 - Added the Sidebar **To-Do / Memo scratchpad** with numbered, vertically aligned paired rows.

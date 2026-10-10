@@ -6,7 +6,7 @@ Ferryは、GNOME Files（Nautilus）の気持ちよいファイル操作体験�
 
 LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わない」操作感が恋しくなることがあります。Ferryは、そのギャップを埋めるために生まれました。
 
-> **現在のリリース:** v1.2.1  
+> **現在のリリース:** v1.2.2  
 > **対応OS:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ LinuxとWindowsを行き来していると、Nautilusの「必要十分で迷わ
 
 ## ダウンロード
 
-**[Ferry v1.2.1 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.1-win-portable.zip)**
+**[Ferry v1.2.2 for Windows をダウンロード（Portable ZIP）](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.2-win-portable.zip)**
 
 インストールは不要です。ZIPを展開して `Ferry.exe` を実行してください。
 
@@ -55,6 +55,7 @@ FerryはExplorerを丸ごと置き換える巨大なファイルマネージャ�
 - **Portable Device認識** — MTP/Android端末をSidebarに表示し、クリックするとWindows Explorerで開きます
 - **Explorer互換のD&D** — FerryからWindows Explorerへの通常Moveで、destinationへ移動したitemがsource側へ残らない
 - **Paste結果の可視化** — Copy/Cut → Paste後、今回貼り付けたdestination項目が選択状態で残り、何を貼り付けたかすぐ分かる
+- **同一フォルダー内の複製** — Copy→Pasteで`名前 (1).ext`のような連番付き複製を作成。複数アイテムの場合はYes/Noで確認
 - **ZIP圧縮・展開** — Ferry側で進捗・ETA・Cancel・競合処理・安全確認まで管理
 - **Portable** — 設定は小さなJSON。独自DBもテレメトリもありません
 
@@ -92,7 +93,7 @@ To-Doを書き、必要ならMemoを書く。不要になれば行を消す。�
 
 ### A. GitHub ReleasesのPortable版
 
-1. 上記のダウンロードリンクから`Ferry-v1.2.1-win-portable.zip`をダウンロードします。
+1. 上記のダウンロードリンクから`Ferry-v1.2.2-win-portable.zip`をダウンロードします。
 2. 好きなフォルダーへ展開します。
 3. `Ferry.exe`を実行します。
 
@@ -107,7 +108,7 @@ To-Doを書き、必要ならMemoを書く。不要になれば行を消す。�
 
 Visual Studio、NuGet、別途.NET SDK、インターネット接続は不要です。
 
-## v1.2.1の初期設定
+## v1.2.2の初期設定
 
 - Sort folders before files: **ON**（SettingsでOFFに変更可能）
 - Open To-Do tab at startup: **OFF**
@@ -195,6 +196,7 @@ Windows管理のごみ箱をFerry内の仮想ビューとして表示します�
 長時間のCopy/Moveは専用STA workerで実行し、FerryのWPF Dispatcherを塞ぎません。Ferry→FerryのD&Dでは受信側がDropを速やかに受理して制御を返し、その後もWindows Shell transferを継続するため、送受信側の両方を操作できます。
 
 - Copy / Cut / Paste
+- 同一フォルダーへのCopy→Pasteは、1件なら自動で`(1)`から始まる重複しない名前で複製し、複数件ならYes/No確認（既定はNo）。Cut→Pasteや別フォルダーへのコピーは従来どおり
 - Recycle Binへの削除 / 完全削除
 - D&D
 - Properties
@@ -303,7 +305,7 @@ Make-PortableRelease.cmd
 を実行します。生成物は、
 
 ```text
-dist\Ferry-v1.2.1-win-portable.zip
+dist\Ferry-v1.2.2-win-portable.zip
 ```
 
 です。

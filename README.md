@@ -6,7 +6,7 @@ Ferry brings a focused, GNOME Files (Nautilus)-inspired file-management workflow
 
 If you move between Linux and Windows and find yourself missing Nautilus — its direct navigation, useful folder item counts, quick filename search, and comfortable bulk rename — Ferry is built for that gap.
 
-> **Current release:** v1.2.1  
+> **Current release:** v1.2.2  
 > **Platform:** Windows 11  
 > **Runtime:** .NET Framework 4.8 / WPF  
 > **License:** MIT
@@ -15,7 +15,7 @@ If you move between Linux and Windows and find yourself missing Nautilus — its
 
 ## Download
 
-**[Download Ferry v1.2.1 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.1-win-portable.zip)**
+**[Download Ferry v1.2.2 for Windows (portable ZIP)](https://github.com/kazu0m1/Ferry/releases/latest/download/Ferry-v1.2.2-win-portable.zip)**
 
 No installer is required. Extract the ZIP and run `Ferry.exe`.
 
@@ -55,6 +55,7 @@ Ferry is deliberately small in scope. It does not try to become an all-in-one du
 - **Portable-device recognition** — connected MTP/Android devices appear in the Sidebar and open in Windows Explorer for occasional file transfer
 - **Explorer-compatible drag & drop** — confirmed Move drops from Ferry to Windows Explorer complete as moves rather than leaving the source behind
 - **Paste result feedback** — after Copy/Cut → Paste, the destination items from the current operation remain selected so you can immediately see what was pasted
+- **Same-folder duplicates** — Copy then Paste in the same folder creates numbered siblings (`name (1).ext`); multiple duplicates require a Yes/No confirmation
 - **ZIP workflow** — Ferry-owned ZIP create/extract with accurate progress, ETA, Cancel, conflict handling, and safety checks
 - **Portable settings** — small human-readable JSON, no private database, no telemetry
 
@@ -98,7 +99,7 @@ GNOME® is a registered trademark of the GNOME Foundation. Ferry is not affiliat
 
 ### Option A — prebuilt portable release
 
-1. Download `Ferry-v1.2.1-win-portable.zip` using the **Download** link above.
+1. Download `Ferry-v1.2.2-win-portable.zip` using the **Download** link above.
 2. Extract it to a folder of your choice.
 3. Run `Ferry.exe`.
 
@@ -218,6 +219,7 @@ Long Copy/Move operations are executed on a dedicated STA worker while Ferry's W
 
 - New Text Document from Ferry's lightweight background context menu
 - Copy / Cut / Paste
+- Same-folder Copy → Paste: one item duplicates immediately with a numbered name; multiple duplicate items require confirmation (No by default). Cut and cross-folder copy behavior is unchanged.
 - delete to Recycle Bin / permanent delete
 - drag & drop
 - conflict handling
@@ -333,7 +335,7 @@ Make-PortableRelease.cmd
 This creates:
 
 ```text
-dist\Ferry-v1.2.1-win-portable.zip
+dist\Ferry-v1.2.2-win-portable.zip
 ```
 
 ## Repository layout
@@ -350,7 +352,7 @@ Ferry/
 ├─ Ferry_SPEC_v1.2.md            current v1.2 release specification
 ├─ Ferry_SPEC_v1.0.md            historical v1.0 baseline
 ├─ TEST_CHECKLIST.md             regression checklist
-├─ RELEASE_NOTES_v1.2.1.md       Current release notes
+├─ RELEASE_NOTES_v1.2.2.md       Current release notes
 ├─ CHANGELOG.md
 ├─ LICENSE.txt
 ├─ README.md
